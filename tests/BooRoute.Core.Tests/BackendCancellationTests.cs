@@ -25,13 +25,13 @@ public sealed class BackendCancellationTests
         Assert.Equal(0, store.SaveCount);
         Assert.Same(original, store.State);
         Assert.Equal(house, Assert.Single(store.State.Houses));
-        Assert.Empty(store.State.Visited);
+        Assert.Empty(store.State.Passport);
         Assert.Equal(0, changed);
 
         var snapshot = await backend.GetSnapshotAsync();
 
         Assert.Equal(house, Assert.Single(snapshot.Houses));
-        Assert.Empty(snapshot.Visited);
+        Assert.Empty(snapshot.Passport);
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(0, store.SaveCount);
         Assert.Same(original, store.State);
@@ -42,7 +42,7 @@ public sealed class BackendCancellationTests
     public async Task CancelledHouseSaveDoesNotChangeStateAndLaterSaveSucceeds()
     {
         var house = Sample();
-        var original = new DemoState([house], [house.Id]);
+        var original = new DemoState([house], [new(house.Id, null)]);
         var store = new CountingStore(original);
         var backend = new MockNeighborhoodBackend(store, TimeProvider.System);
         await backend.GetSnapshotAsync();
@@ -60,19 +60,19 @@ public sealed class BackendCancellationTests
         Assert.Equal(0, store.SaveCount);
         Assert.Same(original, store.State);
         Assert.Equal(house, Assert.Single(store.State.Houses));
-        Assert.Equal(house.Id, Assert.Single(store.State.Visited));
+        Assert.Equal(house.Id, Assert.Single(store.State.Passport).HouseId);
         Assert.Equal(0, changed);
         var unchanged = await backend.GetSnapshotAsync();
         Assert.Equal(house, Assert.Single(unchanged.Houses));
-        Assert.Equal(house.Id, Assert.Single(unchanged.Visited));
+        Assert.Equal(house.Id, Assert.Single(unchanged.Passport).HouseId);
 
         await backend.SaveHouseAsync(updated);
         var snapshot = await backend.GetSnapshotAsync();
 
         Assert.Equal(updated, Assert.Single(snapshot.Houses));
-        Assert.Equal(house.Id, Assert.Single(snapshot.Visited));
+        Assert.Equal(house.Id, Assert.Single(snapshot.Passport).HouseId);
         Assert.Equal(updated, Assert.Single(store.State.Houses));
-        Assert.Equal(house.Id, Assert.Single(store.State.Visited));
+        Assert.Equal(house.Id, Assert.Single(store.State.Passport).HouseId);
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(1, store.SaveCount);
         Assert.Equal(1, changed);
@@ -81,10 +81,10 @@ public sealed class BackendCancellationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task CancelledVisitChangeDoesNotChangeStateAndLaterChangeSucceeds(bool visited)
+    public async Task CancelledCollectionChangeDoesNotChangeStateAndLaterChangeSucceeds(bool collected)
     {
         var house = Sample();
-        var original = new DemoState([house], visited ? [] : [house.Id]);
+        var original = new DemoState([house], collected ? [] : [new(house.Id, null)]);
         var store = new CountingStore(original);
         var backend = new MockNeighborhoodBackend(store, TimeProvider.System);
         await backend.GetSnapshotAsync();
@@ -94,29 +94,29 @@ public sealed class BackendCancellationTests
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => backend.SetVisitedAsync(house.Id, visited, cancellation.Token));
+            () => backend.SetStampCollectedAsync(house.Id, collected, cancellation.Token));
 
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(0, store.SaveCount);
         Assert.Same(original, store.State);
         Assert.Equal(house, Assert.Single(store.State.Houses));
-        Assert.Equal(visited ? 0 : 1, store.State.Visited.Count);
-        Assert.Equal(!visited, store.State.Visited.Contains(house.Id));
+        Assert.Equal(collected ? 0 : 1, store.State.Passport.Count);
+        Assert.Equal(!collected, store.State.Passport.Any(entry => entry.HouseId == house.Id));
         Assert.Equal(0, changed);
         var unchanged = await backend.GetSnapshotAsync();
         Assert.Equal(house, Assert.Single(unchanged.Houses));
-        Assert.Equal(visited ? 0 : 1, unchanged.Visited.Count);
-        Assert.Equal(!visited, unchanged.Visited.Contains(house.Id));
+        Assert.Equal(collected ? 0 : 1, unchanged.Passport.Count);
+        Assert.Equal(!collected, unchanged.Passport.Any(entry => entry.HouseId == house.Id));
 
-        await backend.SetVisitedAsync(house.Id, visited);
+        await backend.SetStampCollectedAsync(house.Id, collected);
         var snapshot = await backend.GetSnapshotAsync();
 
         Assert.Equal(house, Assert.Single(snapshot.Houses));
-        Assert.Equal(visited ? 1 : 0, snapshot.Visited.Count);
-        Assert.Equal(visited, snapshot.Visited.Contains(house.Id));
+        Assert.Equal(collected ? 1 : 0, snapshot.Passport.Count);
+        Assert.Equal(collected, snapshot.Passport.Any(entry => entry.HouseId == house.Id));
         Assert.Equal(house, Assert.Single(store.State.Houses));
-        Assert.Equal(visited ? 1 : 0, store.State.Visited.Count);
-        Assert.Equal(visited, store.State.Visited.Contains(house.Id));
+        Assert.Equal(collected ? 1 : 0, store.State.Passport.Count);
+        Assert.Equal(collected, store.State.Passport.Any(entry => entry.HouseId == house.Id));
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(1, store.SaveCount);
         Assert.Equal(1, changed);

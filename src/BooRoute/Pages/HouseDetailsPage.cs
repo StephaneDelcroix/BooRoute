@@ -6,6 +6,7 @@ public sealed class HouseDetailsPage : ContentPage
 {
     private readonly HouseDetailsViewModel viewModel;
     private readonly PumpkinConfettiView confetti = new();
+    private readonly Border stamp;
 
     public HouseDetailsPage(HouseDetailsViewModel viewModel)
     {
@@ -16,8 +17,15 @@ public sealed class HouseDetailsPage : ContentPage
         BackgroundColor = Ui.Midnight;
         var house = viewModel.House;
         var card = viewModel.Card;
-        var visit = Ui.Button("", "ToggleVisitedButton", viewModel.ToggleVisitedCommand);
-        visit.SetBinding(Button.TextProperty, static (HouseDetailsViewModel model) => model.VisitButtonText);
+        var collect = Ui.Button("", "CollectStampButton", viewModel.CollectStampCommand);
+        collect.SetBinding(Button.TextProperty, static (HouseDetailsViewModel model) => model.StampButtonText);
+        collect.SetBinding(IsEnabledProperty, static (HouseDetailsViewModel model) => model.CanCollect);
+        var remove = Ui.Button(text.RemoveStamp, "RemoveStampButton", viewModel.RemoveStampCommand, secondary: true);
+        remove.SetBinding(IsVisibleProperty, static (HouseDetailsViewModel model) => model.IsCollected);
+        stamp = Ui.Stamp();
+        var presentation = new StampPresentation(card.Stamp, viewModel.Text);
+        stamp.BindingContext = presentation;
+        stamp.AutomationId = "HouseStampPreview";
         var status = Ui.Text(card.Status, 17, card.IsWelcoming ? Ui.Mint : Ui.Muted, true);
         status.AutomationId = "HouseStatusLabel";
         var name = Ui.Text(house.Nickname, 32, bold: true);
@@ -46,8 +54,10 @@ public sealed class HouseDetailsPage : ContentPage
                             Ui.Text(text.AccessibilityDisclaimer, 13, Ui.Muted)
                         }
                     }),
-                    Ui.Errors(), visit,
-                    Ui.Text(text.VisitPrivacy, 13, Ui.Muted)
+                    Ui.Text(text.YourStamp, 22, bold: true),
+                    stamp, Ui.Text(presentation.Description, 14, Ui.Muted),
+                    Ui.Errors(), collect, remove,
+                    Ui.Text(text.PassportPrivacy, 13, Ui.Muted)
                 }
             }
         };
@@ -57,16 +67,28 @@ public sealed class HouseDetailsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        viewModel.VisitMarked += OnVisitMarked;
+        viewModel.StampCollected += OnStampCollected;
         await viewModel.LoadAsync();
+    }
+
+    private async void OnStampCollected(object? sender, EventArgs args)
+    {
+        stamp.CancelAnimations();
+        confetti.Burst();
+        if (!PumpkinConfettiView.MotionEnabled)
+            return;
+        stamp.Scale = 0.65;
+        stamp.Opacity = 0;
+        await Task.WhenAll(stamp.ScaleToAsync(1, 350, Easing.SpringOut), stamp.FadeToAsync(1, 350));
     }
 
     protected override void OnDisappearing()
     {
-        viewModel.VisitMarked -= OnVisitMarked;
+        viewModel.StampCollected -= OnStampCollected;
         confetti.Stop();
+        stamp.CancelAnimations();
+        stamp.Scale = 1;
+        stamp.Opacity = 1;
         base.OnDisappearing();
     }
-
-    private void OnVisitMarked(object? sender, EventArgs e) => confetti.Burst();
 }

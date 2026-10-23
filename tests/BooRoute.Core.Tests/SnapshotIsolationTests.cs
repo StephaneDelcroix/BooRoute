@@ -15,8 +15,8 @@ public sealed class SnapshotIsolationTests
 
         Assert.Equal(house, Assert.Single(before.Houses));
         Assert.Equal(updated, Assert.Single(after.Houses));
-        Assert.Empty(before.Visited);
-        Assert.Empty(after.Visited);
+        Assert.Empty(before.Passport);
+        Assert.Empty(after.Passport);
     }
 
     [Fact]
@@ -32,31 +32,31 @@ public sealed class SnapshotIsolationTests
 
         Assert.Equal(house, Assert.Single(before.Houses));
         Assert.Equal(new[] { house, added }, after.Houses);
-        Assert.Empty(before.Visited);
-        Assert.Empty(after.Visited);
+        Assert.Empty(before.Passport);
+        Assert.Empty(after.Passport);
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task ChangingVisitDoesNotChangeOlderSnapshot(bool visited)
+    public async Task ChangingPassportDoesNotChangeOlderSnapshot(bool collected)
     {
         var house = Sample();
         var other = Sample();
         var backend = CreateBackend(house, other);
-        await backend.SetVisitedAsync(other.Id, true);
-        await backend.SetVisitedAsync(house.Id, !visited);
+        await backend.SetStampCollectedAsync(other.Id, true);
+        await backend.SetStampCollectedAsync(house.Id, !collected);
         var before = await backend.GetSnapshotAsync();
 
-        await backend.SetVisitedAsync(house.Id, visited);
+        await backend.SetStampCollectedAsync(house.Id, collected);
         var after = await backend.GetSnapshotAsync();
 
-        Assert.Equal(!visited, before.Visited.Contains(house.Id));
-        Assert.Equal(visited, after.Visited.Contains(house.Id));
-        Assert.Equal(visited ? 1 : 2, before.Visited.Count);
-        Assert.Equal(visited ? 2 : 1, after.Visited.Count);
-        Assert.Contains(other.Id, before.Visited);
-        Assert.Contains(other.Id, after.Visited);
+        Assert.Equal(!collected, before.Passport.Any(entry => entry.HouseId == house.Id));
+        Assert.Equal(collected, after.Passport.Any(entry => entry.HouseId == house.Id));
+        Assert.Equal(collected ? 1 : 2, before.Passport.Count);
+        Assert.Equal(collected ? 2 : 1, after.Passport.Count);
+        Assert.Contains(before.Passport, entry => entry.HouseId == other.Id);
+        Assert.Contains(after.Passport, entry => entry.HouseId == other.Id);
         Assert.Equal(new[] { house, other }, before.Houses);
         Assert.Equal(new[] { house, other }, after.Houses);
     }
@@ -78,22 +78,21 @@ public sealed class SnapshotIsolationTests
     }
 
     [Fact]
-    public async Task ChangingReturnedVisitSetDoesNotChangeBackendSnapshots()
+    public async Task ChangingReturnedPassportArrayDoesNotChangeBackendSnapshots()
     {
         var house = Sample();
         var other = Sample();
         var backend = CreateBackend(house, other);
-        await backend.SetVisitedAsync(house.Id, true);
+        await backend.SetStampCollectedAsync(house.Id, true);
         var snapshot = await backend.GetSnapshotAsync();
         var another = await backend.GetSnapshotAsync();
-        var visits = Assert.IsType<HashSet<Guid>>(snapshot.Visited);
+        var passport = Assert.IsType<PassportEntry[]>(snapshot.Passport);
 
-        Assert.True(visits.Remove(house.Id));
-        Assert.True(visits.Add(other.Id));
+        passport[0] = new(other.Id, null);
         var later = await backend.GetSnapshotAsync();
 
-        Assert.Equal(house.Id, Assert.Single(another.Visited));
-        Assert.Equal(house.Id, Assert.Single(later.Visited));
+        Assert.Equal(house.Id, Assert.Single(another.Passport).HouseId);
+        Assert.Equal(house.Id, Assert.Single(later.Passport).HouseId);
     }
 
     private static House Sample() => new(Guid.NewGuid(), "Pumpkin Porch", "13 Make-Believe Lane",

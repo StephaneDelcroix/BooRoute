@@ -54,7 +54,7 @@ public sealed class NeighborhoodTests
     }
 
     [Fact]
-    public void FiltersComposeAndVisitsStayPrivate()
+    public void FiltersComposeWithCollectedStamps()
     {
         var wanted = Sample();
         House[] houses =
@@ -65,7 +65,7 @@ public sealed class NeighborhoodTests
         ];
         var result = HouseFilters.Apply(houses, At(18), true, ScareLevel.Friendly, true, new HashSet<Guid> { wanted.Id });
         Assert.Equal(wanted, Assert.Single(result));
-        Assert.Empty(HouseFilters.Apply(houses, At(18), visitedOnly: new HashSet<Guid>()));
+        Assert.Empty(HouseFilters.Apply(houses, At(18), collectedOnly: new HashSet<Guid>()));
     }
 
     [Theory]
@@ -86,7 +86,7 @@ public sealed class NeighborhoodTests
             Assert.Contains("simulated", house.Description);
             Assert.Empty(house.Validate());
         });
-        Assert.Empty(state.Visited);
+        Assert.Empty(state.Passport);
     }
 
     [Fact]
@@ -111,20 +111,21 @@ public sealed class NeighborhoodTests
     }
 
     [Fact]
-    public async Task ExistingFictionalAddressesAndVisitsAreNotReplacedByNewSeed()
+    public async Task ExistingFictionalAddressesAndPassportAreNotReplacedByNewSeed()
     {
         var original = Sample();
         var store = new MemoryStore();
-        await store.SaveAsync(new([original], [original.Id]));
+        var entry = new PassportEntry(original.Id, null);
+        await store.SaveAsync(new([original], [entry]));
         var restored = await new MockNeighborhoodBackend(store, new FixedClock(At(18))).GetSnapshotAsync();
         Assert.Equal(original, Assert.Single(restored.Houses));
-        Assert.Contains(original.Id, restored.Visited);
+        Assert.Equal(entry, Assert.Single(restored.Passport));
     }
 
     [Fact]
-    public async Task HostUpdatesAndVisitsPersistAcrossBackendInstances()
+    public async Task HostUpdatesAndPassportPersistAcrossBackendInstances()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-test-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-test-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "state.json");
         try
         {
@@ -135,14 +136,14 @@ public sealed class NeighborhoodTests
             var changed = 0;
             backend.Changed += (_, _) => changed++;
             await backend.SaveHouseAsync(house);
-            await backend.SetVisitedAsync(house.Id, true);
+            await backend.SetStampCollectedAsync(house.Id, true);
             var restored = await new MockNeighborhoodBackend(new JsonDemoStateStore(path), new FixedClock(At(19))).GetSnapshotAsync();
             Assert.Equal(house, restored.Houses.Single(saved => saved.Id == house.Id));
-            Assert.Contains(house.Id, restored.Visited);
+            Assert.Equal(new PassportEntry(house.Id, At(18)), Assert.Single(restored.Passport));
             Assert.Equal(2, changed);
             Assert.Equal(10, restored.Houses.Count);
-            await backend.SetVisitedAsync(house.Id, false);
-            Assert.Empty((await backend.GetSnapshotAsync()).Visited);
+            await backend.SetStampCollectedAsync(house.Id, false);
+            Assert.Empty((await backend.GetSnapshotAsync()).Passport);
         }
         finally
         {
@@ -156,8 +157,8 @@ public sealed class NeighborhoodTests
     {
         var backend = new MockNeighborhoodBackend(new MemoryStore(), new FixedClock(At(18)));
         var houses = (await backend.GetSnapshotAsync()).Houses;
-        await Task.WhenAll(houses.Select(house => backend.SetVisitedAsync(house.Id, true)));
-        Assert.Equal(10, (await backend.GetSnapshotAsync()).Visited.Count);
+        await Task.WhenAll(houses.Select(house => backend.SetStampCollectedAsync(house.Id, true)));
+        Assert.Equal(10, (await backend.GetSnapshotAsync()).Passport.Count);
     }
 
     [Fact]
@@ -169,7 +170,7 @@ public sealed class NeighborhoodTests
         await backend.SaveHouseAsync(house with { Description = "Updated" });
         Assert.Equal(11, (await backend.GetSnapshotAsync()).Houses.Count);
         await Assert.ThrowsAsync<ArgumentException>(() => backend.SaveHouseAsync(house with { Nickname = "" }));
-        await Assert.ThrowsAsync<ArgumentException>(() => backend.SetVisitedAsync(Guid.NewGuid(), true));
+        await Assert.ThrowsAsync<ArgumentException>(() => backend.SetStampCollectedAsync(Guid.NewGuid(), true));
     }
 
     [Fact]
@@ -189,14 +190,14 @@ public sealed class NeighborhoodTests
     [Fact]
     public async Task CorruptDataIsReportedWithoutOverwritingIt()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-test-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-test-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "state.json");
         try
         {
             var store = new JsonDemoStateStore(path);
             await File.WriteAllTextAsync(path, "{ broken");
             var backend = new MockNeighborhoodBackend(store, new FixedClock(At(18)));
-            await Assert.ThrowsAsync<JsonException>(() => backend.GetSnapshotAsync());
+            await Assert.ThrowsAnyAsync<JsonException>(() => backend.GetSnapshotAsync());
             Assert.Equal("{ broken", await File.ReadAllTextAsync(path));
             await File.WriteAllTextAsync(path, """{"Houses":null,"Visited":[]}""");
             await Assert.ThrowsAsync<InvalidDataException>(() => backend.GetSnapshotAsync());

@@ -42,7 +42,7 @@ public sealed class PumpkinConfettiView : GraphicsView
         Opacity = 0;
     }
 
-    private static bool MotionEnabled
+    internal static bool MotionEnabled
     {
         get
         {

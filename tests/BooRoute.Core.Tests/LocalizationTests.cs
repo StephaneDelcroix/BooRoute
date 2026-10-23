@@ -90,6 +90,25 @@ public sealed class LocalizationTests
     }
 
     [Theory]
+    [InlineData("en-CA", "Passport", "Collect passport stamp", "Previously collected", "Lavender · Ghost · Sparkles", "First Knock")]
+    [InlineData("fr-CA", "Passeport", "Collectionner le timbre du passeport", "Collectionné auparavant", "Lavande · Fantôme · Étincelles", "Premier coup à la porte")]
+    public void PassportLabelsDesignDescriptionsAndAchievementsFollowLocale(
+        string culture, string passport, string collect, string legacy, string design, string firstKnock)
+    {
+        using var scope = new CultureScope(culture);
+        var text = AppText.Default;
+        Assert.Equal(passport, text.Strings.Passport);
+        Assert.Equal(collect, text.Strings.CollectStamp);
+        Assert.Equal(legacy, text.Strings.PreviouslyCollected);
+        Assert.Equal(design, text.StampDescription(new(StampSymbol.Ghost, StampPalette.Lavender, StampAccent.Sparkles)));
+        var house = Sample();
+        var achievement = PassportAchievements.Evaluate([house], [new(house.Id, null)])
+            .Single(item => item.Kind == PassportAchievementKind.FirstKnock);
+        Assert.True(achievement.IsUnlocked);
+        Assert.Equal(firstKnock, achievement.Title);
+    }
+
+    [Theory]
     [InlineData("en-CA")]
     [InlineData("fr-CA")]
     public void HoursUseRegionalShortTimeFormat(string culture)
@@ -116,7 +135,7 @@ public sealed class LocalizationTests
     }
 
     [Fact]
-    public void LocaleChangeRefreshesCachedCardsWithoutChangingHousesOrVisits()
+    public void LocaleChangeRefreshesCachedCardsWithoutChangingHousesOrStamps()
     {
         var house = Sample();
         var now = new DateTimeOffset(2026, 10, 31, 18, 0, 0, TimeSpan.Zero);
@@ -133,8 +152,9 @@ public sealed class LocalizationTests
             var french = Assert.Single(cards);
             Assert.NotSame(english, french);
             Assert.Equal(house, french.House);
-            Assert.True(french.Visited);
-            Assert.Equal("✓ Visité", french.VisitStatus);
+            Assert.True(french.IsCollected);
+            Assert.Equal("Timbre du passeport collectionné", french.PassportStatus);
+            Assert.Equal(english.Stamp, french.Stamp);
             Assert.Contains("Amical", french.Features);
             Assert.Equal(AppText.Default.Hours(house.OpensAt, house.ClosesAt), french.Hours);
             cards.Update([house], new HashSet<Guid> { house.Id }, now);
@@ -174,9 +194,9 @@ public sealed class LocalizationTests
     [Theory]
     [InlineData("en-CA", "fr-CA")]
     [InlineData("fr-CA", "en-CA")]
-    public async Task LanguageChangesPreserveSavedHousesVisitsAndUserText(string firstLanguage, string nextLanguage)
+    public async Task LanguageChangesPreserveSavedHousesStampsAndUserText(string firstLanguage, string nextLanguage)
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-localization-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-localization-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "neighborhood.json");
         try
         {
@@ -189,7 +209,7 @@ public sealed class LocalizationTests
                 var initial = await backend.GetSnapshotAsync();
                 var edited = Sample() with { Id = initial.Houses[0].Id };
                 await backend.SaveHouseAsync(edited);
-                await backend.SetVisitedAsync(edited.Id, true);
+                await backend.SetStampCollectedAsync(edited.Id, true);
                 saved = await backend.GetSnapshotAsync();
                 json = await File.ReadAllTextAsync(path);
             }
@@ -200,12 +220,12 @@ public sealed class LocalizationTests
                 var restored = await backend.GetSnapshotAsync();
 
                 Assert.Equal(saved.Houses, restored.Houses);
-                Assert.Equal(saved.Visited.Order(), restored.Visited.Order());
+                Assert.Equal(saved.Passport, restored.Passport);
                 Assert.Equal(json, await File.ReadAllTextAsync(path));
-                await backend.SetVisitedAsync(saved.Houses[0].Id, false);
+                await backend.SetStampCollectedAsync(saved.Houses[0].Id, false);
                 var afterWrite = await new JsonDemoStateStore(path).LoadAsync();
                 Assert.Equal(saved.Houses, afterWrite!.Houses);
-                Assert.Empty(afterWrite.Visited);
+                Assert.Empty(afterWrite.Passport);
             }
         }
         finally

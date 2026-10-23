@@ -45,7 +45,7 @@ public sealed class HouseCollectionTests
     }
 
     [Fact]
-    public void VisitsAndTimeBoundariesUpdateWithoutResettingTheCollection()
+    public void StampsAndTimeBoundariesUpdateWithoutResettingTheCollection()
     {
         var house = House("Porch");
         var cards = new HouseCardCollection();
@@ -53,11 +53,11 @@ public sealed class HouseCollectionTests
         var actions = Observe(cards);
 
         cards.Update([house], new HashSet<Guid> { house.Id }, Now);
-        Assert.Equal("✓ Visited", cards[0].VisitStatus);
+        Assert.Equal("Passport stamp collected", cards[0].PassportStatus);
         Assert.True(cards[0].IsWelcoming);
 
         cards.Update([house], NoVisits, Now.AddHours(2));
-        Assert.Empty(cards[0].VisitStatus);
+        Assert.Empty(cards[0].PassportStatus);
         Assert.False(cards[0].IsWelcoming);
         Assert.Equal("Lights on · Outside hours", cards[0].Status);
         Assert.Equal([NotifyCollectionChangedAction.Replace, NotifyCollectionChangedAction.Replace], actions);
@@ -136,7 +136,7 @@ public sealed class HouseCollectionTests
             cards.Update(next, visited, Now);
 
             Assert.Equal(next, cards.Select(card => card.House));
-            Assert.All(cards, card => Assert.Equal(visited.Contains(card.House.Id), card.Visited));
+            Assert.All(cards, card => Assert.Equal(visited.Contains(card.House.Id), card.IsCollected));
         }
         Assert.DoesNotContain(NotifyCollectionChangedAction.Reset, actions);
     }

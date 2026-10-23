@@ -35,31 +35,31 @@ public sealed class DemoSeedIsolationTests
 
         Assert.Equal(new[] { edited }.Concat(originalFirst.Skip(2)).Append(added), first.Houses);
         Assert.Equal(originalSecond, second.Houses);
-        Assert.Empty(first.Visited);
-        Assert.Empty(second.Visited);
+        Assert.Empty(first.Passport);
+        Assert.Empty(second.Passport);
     }
 
     [Fact]
-    public void AddingAndRemovingVisitsDoesNotChangeAnotherNeighborhood()
+    public void AddingAndRemovingStampsDoesNotChangeAnotherNeighborhood()
     {
         var first = DemoSeed.Create(Now);
         var second = DemoSeed.Create(Now);
         var originalFirst = first.Houses.ToArray();
         var originalSecond = second.Houses.ToArray();
-        Assert.NotSame(first.Visited, second.Visited);
+        Assert.NotSame(first.Passport, second.Passport);
 
-        Assert.True(second.Visited.Add(second.Houses[0].Id));
-        Assert.Empty(first.Visited);
+        second.Passport.Add(new(second.Houses[0].Id, Now));
+        Assert.Empty(first.Passport);
 
-        Assert.True(first.Visited.Add(first.Houses[0].Id));
-        Assert.True(first.Visited.Add(first.Houses[1].Id));
-        Assert.True(first.Visited.SetEquals(first.Houses.Take(2).Select(house => house.Id)));
-        Assert.Equal(second.Houses[0].Id, Assert.Single(second.Visited));
+        first.Passport.Add(new(first.Houses[0].Id, Now));
+        first.Passport.Add(new(first.Houses[1].Id, null));
+        Assert.Equal(first.Houses.Take(2).Select(house => house.Id), first.Passport.Select(entry => entry.HouseId));
+        Assert.Equal(new PassportEntry(second.Houses[0].Id, Now), Assert.Single(second.Passport));
 
-        Assert.True(first.Visited.Remove(first.Houses[0].Id));
+        Assert.Equal(1, first.Passport.RemoveAll(entry => entry.HouseId == first.Houses[0].Id));
 
-        Assert.Equal(first.Houses[1].Id, Assert.Single(first.Visited));
-        Assert.Equal(second.Houses[0].Id, Assert.Single(second.Visited));
+        Assert.Equal(new PassportEntry(first.Houses[1].Id, null), Assert.Single(first.Passport));
+        Assert.Equal(new PassportEntry(second.Houses[0].Id, Now), Assert.Single(second.Passport));
         Assert.Equal(originalFirst, first.Houses);
         Assert.Equal(originalSecond, second.Houses);
     }

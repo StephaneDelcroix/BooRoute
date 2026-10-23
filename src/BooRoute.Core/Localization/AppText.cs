@@ -62,6 +62,30 @@ public sealed class AppText
         _ => throw new ArgumentOutOfRangeException(nameof(status))
     };
 
+    public string StampDescription(StampDesign design) => Strings.StampDescriptionFormat(
+        design.Palette switch
+        {
+            StampPalette.Pumpkin => Strings.StampPumpkinPalette,
+            StampPalette.Lavender => Strings.StampLavender,
+            StampPalette.Mint => Strings.StampMint,
+            _ => Strings.StampRose
+        },
+        design.Symbol switch
+        {
+            StampSymbol.Pumpkin => Strings.StampPumpkin,
+            StampSymbol.Ghost => Strings.StampGhost,
+            StampSymbol.Bat => Strings.StampBat,
+            StampSymbol.Cat => Strings.StampCat,
+            StampSymbol.Moon => Strings.StampMoon,
+            _ => Strings.StampSpider
+        },
+        design.Accent switch
+        {
+            StampAccent.Stars => Strings.StampStars,
+            StampAccent.Sparkles => Strings.StampSparkles,
+            _ => Strings.StampDots
+        });
+
     // Native callbacks and existing async operations can retain the previous ambient culture.
     private sealed class CultureLocalizer(IStringLocalizer inner) : IStringLocalizer<AppText>
     {

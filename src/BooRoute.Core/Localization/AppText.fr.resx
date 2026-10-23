@@ -92,7 +92,7 @@
   <data name="Locale" xml:space="preserve"><value>Langue et région</value></data>
   <data name="SystemLocale" xml:space="preserve"><value>Utiliser les réglages de l’appareil</value></data>
   <data name="ApplyLocale" xml:space="preserve"><value>Appliquer la langue et la région</value></data>
-  <data name="LocaleNotice" xml:space="preserve"><value>Appliqué immédiatement et enregistré sur cet appareil. Enregistrez vos modifications : les formulaires ouverts seront fermés. Les noms, adresses, descriptions et visites privées restent inchangés.</value></data>
+  <data name="LocaleNotice" xml:space="preserve"><value>Appliqué immédiatement et enregistré sur cet appareil. Enregistrez vos modifications : les formulaires ouverts seront fermés. Les noms, adresses, descriptions et timbres du passeport restent inchangés.</value></data>
   <data name="LocalePreview" xml:space="preserve"><value>Format de l’heure : {0}</value></data>
   <data name="Map" xml:space="preserve"><value>Carte</value></data>
   <data name="MapHeading" xml:space="preserve"><value>Le voisinage de démonstration</value></data>
@@ -128,4 +128,47 @@
   <data name="DemoDescription7" xml:space="preserve"><value>Chauves-souris, ombres et musique inquiétante. Cet arrêt plaira aux familles qui aiment les frissons.</value></data>
   <data name="DemoDescription8" xml:space="preserve"><value>Des décorations en papier coloré et de gentils squelettes. Venez saluer le voisinage dans une ambiance festive.</value></data>
   <data name="DemoDescription9" xml:space="preserve"><value>Les citrouilles se reposent pour la soirée. Admirez les décorations depuis le sentier.</value></data>
+  <data name="Passport" xml:space="preserve"><value>Passeport</value></data>
+  <data name="PassportHeading" xml:space="preserve"><value>Passeport d’Halloween</value></data>
+  <data name="CollectStamp" xml:space="preserve"><value>Collectionner le timbre du passeport</value></data>
+  <data name="StampCollected" xml:space="preserve"><value>✓ Timbre collectionné</value></data>
+  <data name="PassportStampCollected" xml:space="preserve"><value>Timbre du passeport collectionné</value></data>
+  <data name="RemoveStamp" xml:space="preserve"><value>Retirer du passeport</value></data>
+  <data name="YourStamp" xml:space="preserve"><value>Votre timbre du passeport</value></data>
+  <data name="PassportPrivacy" xml:space="preserve"><value>Votre passeport et les dates de collection restent sur cet appareil. Aucun compte. Aucun suivi ni partage.</value></data>
+  <data name="HouseStampDetails" xml:space="preserve"><value>Détails de la maison et du timbre</value></data>
+  <data name="PassportFirstStamp" xml:space="preserve"><value>Collectionnez votre premier timbre du passeport</value></data>
+  <data name="PassportProgress" xml:space="preserve"><value>{0} timbres du passeport collectionnés sur {1}</value></data>
+  <data name="PreviouslyCollected" xml:space="preserve"><value>Collectionné auparavant</value></data>
+  <data name="CollectedAt" xml:space="preserve"><value>Collectionné le {0}</value></data>
+  <data name="SelectStamp" xml:space="preserve"><value>Sélectionnez d’abord un timbre.</value></data>
+  <data name="Achievements" xml:space="preserve"><value>Réussites</value></data>
+  <data name="Unlocked" xml:space="preserve"><value>Déverrouillé</value></data>
+  <data name="Locked" xml:space="preserve"><value>Verrouillé · Continuez à explorer</value></data>
+  <data name="FirstKnock" xml:space="preserve"><value>Premier coup à la porte</value></data>
+  <data name="FirstKnockDescription" xml:space="preserve"><value>Collectionnez votre premier timbre du passeport.</value></data>
+  <data name="SpookyExplorer" xml:space="preserve"><value>Explorateur de frissons</value></data>
+  <data name="SpookyExplorerDescription" xml:space="preserve"><value>Collectionnez des maisons aux niveaux Amical, Inquiétant et Effrayant.</value></data>
+  <data name="QuietNight" xml:space="preserve"><value>Nuit tranquille</value></data>
+  <data name="QuietNightDescription" xml:space="preserve"><value>Collectionnez deux maisons offrant des visites calmes.</value></data>
+  <data name="RefreshPassport" xml:space="preserve"><value>Actualiser le passeport</value></data>
+  <data name="CollectedStamps" xml:space="preserve"><value>Timbres collectionnés</value></data>
+  <data name="PassportEmptyHeading" xml:space="preserve"><value>Votre histoire d’Halloween commence par un coup à la porte.</value></data>
+  <data name="PassportEmptyDescription" xml:space="preserve"><value>Ouvrez une maison dans Explorer, puis choisissez « Collectionner le timbre du passeport ». Votre premier souvenir apparaîtra ici.</value></data>
+  <data name="ViewHouse" xml:space="preserve"><value>Voir la maison</value></data>
+  <data name="ViewStampHouse" xml:space="preserve"><value>Voir le timbre et la maison de {0}</value></data>
+  <data name="StampDescription" xml:space="preserve"><value>{0} · {1} · {2}</value></data>
+  <data name="StampPumpkin" xml:space="preserve"><value>Citrouille</value></data>
+  <data name="StampGhost" xml:space="preserve"><value>Fantôme</value></data>
+  <data name="StampBat" xml:space="preserve"><value>Chauve-souris</value></data>
+  <data name="StampCat" xml:space="preserve"><value>Chat</value></data>
+  <data name="StampMoon" xml:space="preserve"><value>Lune</value></data>
+  <data name="StampSpider" xml:space="preserve"><value>Araignée</value></data>
+  <data name="StampPumpkinPalette" xml:space="preserve"><value>Orange citrouille</value></data>
+  <data name="StampLavender" xml:space="preserve"><value>Lavande</value></data>
+  <data name="StampMint" xml:space="preserve"><value>Menthe</value></data>
+  <data name="StampRose" xml:space="preserve"><value>Rose</value></data>
+  <data name="StampStars" xml:space="preserve"><value>Étoiles</value></data>
+  <data name="StampSparkles" xml:space="preserve"><value>Étincelles</value></data>
+  <data name="StampDots" xml:space="preserve"><value>Points</value></data>
 </root>

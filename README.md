@@ -1,10 +1,10 @@
 # 🎃 BooRoute
 
 A small .NET MAUI Halloween app built for a live GitHub Copilot demo.
-Find participating houses, choose your scare level, mark private visits, and
+Find participating houses, choose your scare level, collect private passport stamps, and
 switch to the demo-host experience to register a fictional house or change its status.
 
-**This is a local demo, not a public neighborhood service.** Both experiences
+**This is a local demo, not a public neighborhood service.** All three tabs
 share one asynchronous, in-app mock backend. There is no server, account verification,
 cloud synchronization, or tracking. The initial stops use real public venue
 addresses around Microsoft's Cologne office at Holzmarkt 2a. **These venues are
@@ -163,22 +163,37 @@ It is a presentation aid, not a correctness or security gate.
 ## Try the demo
 
 1. Browse **Explore**, turn on **Welcoming visitors now**, and try scare-level or quiet-visit filters.
-2. Open a house and mark it visited for a short pumpkin-confetti celebration, then
-   find it under **My visits**. The pumpkins only fly after a successful save, not
-   when undoing a visit, and respect the device's reduced-motion setting.
-3. Switch to **Demo host**, edit that house, and change its status to **Out of treats**.
-4. Return to Explore: it no longer appears under welcoming-only filtering.
-5. Open **Map** to see every stop from the list as a pin at its address. Tap a pin's
-   callout to open its details. Addresses are looked up with the platform geocoder
-   (Apple Maps or Google), so the map needs a network connection; houses whose
-   address can't be found are left off the map and counted in the summary.
-5. Register another fictional house. Restart the app to see that houses and visits persist.
+2. Open a house, preview its generated stamp, and choose **Collect passport stamp**.
+   The stamp reveals with a short animation and pumpkin confetti, only after a
+   successful save and respecting reduced motion. Explore now shows **Passport stamp collected**.
+3. Open **Passport** (between Map and Demo host, or Explore and Demo host on Windows)
+   to see progress, collection dates, a two-column stamp collection, and locked/unlocked achievements. Select a stamp to
+   return to its house. Collect Friendly, Spooky, and Scary houses for **Spooky Explorer**,
+   any first stamp for **First Knock**, and two quiet-visit houses for **Quiet Night**.
+4. Use the separate **Remove from passport** action on house details to remove a stamp.
+   Progress and achievements recompute; collecting again records a new time.
+5. Switch to **Demo host**, edit a house, and change its status to **Out of treats**.
+   Return to Explore: it no longer appears under welcoming-only filtering.
+6. Open **Map** to see every stop from the list as a pin at its address. Tap a pin's
+   callout to open its details and collect a stamp. Addresses are looked up with the
+   platform geocoder (Apple Maps or Google), so the map needs a network connection;
+   houses whose address can't be found are left off the map and counted in the summary.
+7. Register another fictional house. Restart the app to see that houses and passport
+   stamps persist. Use **Refresh passport** to reload the collection.
+
+Stamps are deterministic keepsakes derived directly from stable house-ID bytes:
+symbol, palette, and accent do not change when a host edits scare level or accessibility.
+Those current house details appear separately. Stamps use native controls, colors, and
+emoji—no graphics service, uploads, or additional packages. Collection is idempotent:
+collecting an existing stamp preserves its original timestamp. Passport data and
+collection times stay on this device; there is no tracking, sharing, or cloud sync.
+Achievements are computed from the current collected houses, never persisted.
 
 Ten houses are seeded on first use. Their initial daily welcoming windows are
 relative to the first launch time, so the demo works during the day or across midnight.
 Existing saved neighborhoods, including older fictional addresses, are preserved;
-upgrading does not overwrite houses or visits. Use a fresh installation to see
-the Cologne seed.
+upgrading does not overwrite houses or collected stamps (including legacy visits).
+Use a fresh installation to see the Cologne seed.
 The closing boundary is exclusive. Status and time both determine availability.
 The foreground list refreshes every 30 seconds, on appearance, on resume, and
 after successful mock-backend changes.
@@ -186,7 +201,14 @@ after successful mock-backend changes.
 Data is saved to `neighborhood.json` in the app's private data directory using
 atomic file replacement. Both reads and writes use source-generated
 `System.Text.Json` metadata so persistence does not require reflection under NativeAOT.
-Errors are displayed rather than replacing corrupt data
+The current JSON document has `Version: 1`, `Houses`, and
+`Passport` (entries with `HouseId` and nullable `CollectedAt`). The domain state has
+no persistence version field. Legacy `Houses`/`Visited` files load without changing
+their bytes: visited IDs become passport entries with no timestamp, displayed as
+**Previously collected**. The next successful state-changing mutation writes version 1;
+recollecting an existing stamp does not rewrite the file or invent a legacy timestamp.
+Unknown house IDs, duplicate houses/stamps, null data, invalid house fields, and unknown
+schema versions are rejected. Errors are displayed rather than replacing corrupt data
 with a fresh success-shaped dataset. To start over, uninstall and reinstall the
 app (this deletes its local demo data).
 
@@ -211,7 +233,8 @@ Museum Schnütgen and the Rautenstrauch-Joest-Museum share an entrance address.
 
 ## Adaptive entry collections
 
-Explore, My visits, and Demo host share a native-virtualized `CollectionView`.
+Explore and Demo host share a native-virtualized `CollectionView`; Passport uses
+a separate two-column stamp collection in place of the former My visits tab.
 Following the [bespoke collections skill's scenario-selection guidance](https://github.com/dotnet/maui-labs/blob/redth-bespoke-collection-research/plugins/dotnet-maui/skills/maui-bespoke-collections/references/scenario-selection.md),
 this regular grid retains MAUI's existing platform handlers rather than adding
 a custom scrolling engine or handler registration.
@@ -220,12 +243,12 @@ Columns follow the collection's available width, not the device model. Cards
 have a 320-DIP minimum width, 14-DIP column gaps, and 22-DIP outer insets. Narrow
 windows use one column; larger windows add columns as space permits, including
 after rotation or window resizing. Cards remain self-sized so wrapped names,
-addresses, visit indicators, and automatically scaled text are not clipped to
+addresses, stamp indicators, and automatically scaled text are not clipped to
 the first card's height.
 
 Refreshes reconcile entries by house ID instead of clearing the list. Unchanged
 cards retain their identity and cached presentation strings; edits, filtering,
-visits, and welcoming-time transitions emit targeted collection changes.
+collected stamps, and welcoming-time transitions emit targeted collection changes.
 Overlapping refreshes are serialized. Item bindings use typed C# getters, and
 the collection remains the page's finite, directly hosted scrolling viewport.
 The mock backend still supplies a complete in-memory snapshot; this is not a
@@ -261,13 +284,14 @@ selection; the explicit in-app selection takes precedence.
 [Shiny LocalizeGen](https://shinylib.net/localizegen/) generates typed accessors
 and DI registration from `src/BooRoute.Core/Localization/AppText.resx` and
 `AppText.fr.resx`. Keep both files' keys and format arguments in sync. Navigation,
-filters, statuses, accessibility descriptions, validation, and errors use these
-resources; enum values and the `neighborhood.json` format remain unchanged.
+filters, statuses, Passport, achievements, accessibility descriptions, validation,
+and errors use these resources. Enum values remain unchanged; the versioned
+`neighborhood.json` format accepts legacy files as described above.
 
 New demo stops retain their real Cologne venue names and addresses, with a
 description in the first-launch language. Saved names, addresses and descriptions
 are editable data: changing language does not translate or overwrite those fields,
-reset visits, or reseed data. The no-participation and simulated-accessibility
+reset collected stamps, or reseed data. The no-participation and simulated-accessibility
 warnings remain visible in both languages.
 
 House cards and native time-picker fields use the selected locale's short-time
@@ -280,7 +304,10 @@ house's timezone, not just the viewer's device timezone.
 ## Structure
 
 - `src/BooRoute`: native MAUI pages, MVVM view models, and dependency injection.
-- `src/BooRoute.Core`: models, welcoming/filter rules, mock backend, and JSON persistence.
+  `PassportPage`/`PassportViewModel` own the collection and achievements; house details
+  own the stamp preview and page-layer reveal animation.
+- `src/BooRoute.Core`: models, welcoming/filter rules, deterministic `StampGenerator`,
+  computed `PassportAchievements`, clock-injected mock backend, and versioned JSON persistence.
 - `tests/BooRoute.Core.Tests`: clock-controlled business-rule, persistence, and
   portable entry-presentation/grid tests (linked from the app's actual source).
 - `docs/initial-prompt.txt`: the prompt used to start the build.
@@ -289,16 +316,35 @@ house's timezone, not just the viewer's device timezone.
 dotnet test tests/BooRoute.Core.Tests/BooRoute.Core.Tests.csproj
 ```
 
-Verified for this initial version: the iOS simulator build, launch, welcoming/scare/quiet
-filters, private visit tracking, demo-host status changes, registration validation,
-and persistence after process restart. The portable suite covers resource
-parity/fallback, pluralization, Unicode, cross-language persistence, and Canadian
+Previously verified upstream: the iOS simulator build, launch, welcoming/scare/quiet
+filters, private visit tracking (now replaced by Passport), demo-host status changes,
+registration validation, and persistence after process restart. The portable suite
+covers resource parity/fallback, pluralization, Unicode, cross-language persistence, and Canadian
 timezone cases. Mac Catalyst startup
 has also been verified on Apple Silicon with Xcode 27.1 using the preview version
 check override above. The localized app also builds for iOS, Android (Debug and
 Release), and Mac Catalyst; French startup has been checked on an iOS simulator and
 an Android API 35 emulator, including the trimmed Android Release package.
 Windows and physical devices have not been verified.
+
+The core suite covers welcoming/scare/quiet/collected filters, stable known-GUID stamp
+designs, injected collection times, idempotency, removal, concurrent collection,
+computed achievements, snapshot isolation, version-1 roundtrips, byte-preserving
+legacy migration, invalid/duplicate/unknown data rejection, and failed/atomic writes.
+Run the core tests and iOS simulator build commands above for verification.
+For a manual UI check, follow the demo steps, including the reveal animation,
+empty/locked states, removal, and restart persistence. Android, Windows, and physical
+devices have not been verified for Passport.
+
+The exact commands from the repository root are blocked on machines where `global.json`
+requires the unavailable `11.0.100-rc.2.26475.136` SDK. The committed SDK pin
+has not been changed; install that version to run those commands unchanged.
+For local validation with installed `11.0.100-rc.1.26425.128`, invoke `dotnet test`
+and `dotnet build` from a directory outside this repository's SDK-selection scope
+and pass absolute project paths. This does not change the repository SDK pin.
+If that toolchain cannot restore its NativeAOT iOS runtime package, a supplemental
+simulator build with `-p:PublishAot=false` checks the app without changing its
+committed NativeAOT configuration; it does not validate NativeAOT compilation.
 
 The service boundary can later be replaced with a real backend. Real authentication,
 host ownership, moderation, consent, and safe address sharing would be necessary

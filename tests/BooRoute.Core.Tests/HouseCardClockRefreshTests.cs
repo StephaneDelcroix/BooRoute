@@ -135,8 +135,8 @@ public sealed class HouseCardClockRefreshTests
         for (var index = 0; index < houses.Length; index++)
         {
             Assert.Same(houses[index], cards[index].House);
-            Assert.False(cards[index].Visited);
-            Assert.Empty(cards[index].VisitStatus);
+            Assert.False(cards[index].IsCollected);
+            Assert.Empty(cards[index].PassportStatus);
             if (changedIndices.Contains(index))
                 Assert.NotSame(original[index], cards[index]);
             else

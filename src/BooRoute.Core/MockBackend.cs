@@ -3,8 +3,8 @@ using BooRoute.Core.Localization;
 
 namespace BooRoute.Core;
 
-public sealed record DemoState(List<House> Houses, HashSet<Guid> Visited);
-public sealed record NeighborhoodSnapshot(IReadOnlyList<House> Houses, IReadOnlySet<Guid> Visited);
+public sealed record DemoState(List<House> Houses, List<PassportEntry> Passport);
+public sealed record NeighborhoodSnapshot(IReadOnlyList<House> Houses, IReadOnlyList<PassportEntry> Passport);
 
 public interface IDemoStateStore
 {
@@ -17,7 +17,7 @@ public interface INeighborhoodBackend
     event EventHandler? Changed;
     Task<NeighborhoodSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default);
     Task SaveHouseAsync(House house, CancellationToken cancellationToken = default);
-    Task SetVisitedAsync(Guid houseId, bool visited, CancellationToken cancellationToken = default);
+    Task SetStampCollectedAsync(Guid houseId, bool collected, CancellationToken cancellationToken = default);
 }
 
 public sealed class JsonDemoStateStore : IDemoStateStore
@@ -44,24 +44,52 @@ public sealed class JsonDemoStateStore : IDemoStateStore
 
         await using (stream)
         {
-            var state = await JsonSerializer.DeserializeAsync(stream, DemoJsonContext.Default.DemoState, cancellationToken);
-            if (state is null || state.Houses is null || state.Visited is null ||
-                state.Houses.Any(house => house is null || house.Validate().Count != 0) ||
-                state.Houses.Select(house => house.Id).Distinct().Count() != state.Houses.Count ||
-                state.Visited.Any(id => !state.Houses.Any(house => house.Id == id)))
-                throw new InvalidDataException(AppText.Default.Strings.SavedDataInvalid);
+            using var json = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            if (json.RootElement.ValueKind != JsonValueKind.Object)
+                throw InvalidState();
+            var document = json.RootElement.Deserialize(DemoJsonContext.Default.SavedDemoDocument)!;
+            List<PassportEntry>? passport;
+            if (json.RootElement.TryGetProperty("Version", out _))
+            {
+                if (document.Version != 1)
+                    throw InvalidState();
+                passport = document.Passport;
+            }
+            else
+            {
+                passport = document.Visited?.Select(id => new PassportEntry(id, null)).ToList();
+            }
+            var state = new DemoState(document.Houses!, passport!);
+            Validate(state);
             return state;
         }
     }
 
+    private static InvalidDataException InvalidState() =>
+        new(AppText.Default.Strings.SavedDataInvalid);
+
+    private static void Validate(DemoState state)
+    {
+        if (state.Houses is null || state.Passport is null ||
+            state.Houses.Any(house => house is null || house.Validate().Count != 0) ||
+            state.Houses.Select(house => house.Id).Distinct().Count() != state.Houses.Count ||
+            state.Passport.Any(entry => entry is null) ||
+            state.Passport.Select(entry => entry.HouseId).Distinct().Count() != state.Passport.Count ||
+            state.Passport.Any(entry => !state.Houses.Any(house => house.Id == entry.HouseId)))
+            throw InvalidState();
+    }
+
     public async Task SaveAsync(DemoState state, CancellationToken cancellationToken = default)
     {
+        Validate(state);
         var temporaryPath = path + ".tmp";
         try
         {
             await using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                await JsonSerializer.SerializeAsync(stream, state, DemoJsonContext.Default.DemoState, cancellationToken);
+                await JsonSerializer.SerializeAsync(stream,
+                    new CurrentDemoDocument(1, state.Houses, state.Passport),
+                    DemoJsonContext.Default.CurrentDemoDocument, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
             }
             File.Move(temporaryPath, path, overwrite: true);
@@ -100,7 +128,7 @@ public sealed class MockNeighborhoodBackend(IDemoStateStore store, TimeProvider 
         try
         {
             var current = await GetStateAsync(cancellationToken);
-            return new(current.Houses.ToArray(), new HashSet<Guid>(current.Visited));
+            return new(current.Houses.ToArray(), current.Passport.ToArray());
         }
         finally
         {
@@ -120,11 +148,13 @@ public sealed class MockNeighborhoodBackend(IDemoStateStore store, TimeProvider 
             var current = await GetStateAsync(cancellationToken);
             var houses = current.Houses.ToList();
             var index = houses.FindIndex(existing => existing.Id == house.Id);
+            if (index >= 0 && houses[index] == house)
+                return;
             if (index < 0)
                 houses.Add(house);
             else
                 houses[index] = house;
-            var updated = new DemoState(houses, new(current.Visited));
+            var updated = new DemoState(houses, new(current.Passport));
             await store.SaveAsync(updated, cancellationToken);
             state = updated;
         }
@@ -135,7 +165,7 @@ public sealed class MockNeighborhoodBackend(IDemoStateStore store, TimeProvider 
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task SetVisitedAsync(Guid houseId, bool visited, CancellationToken cancellationToken = default)
+    public async Task SetStampCollectedAsync(Guid houseId, bool collected, CancellationToken cancellationToken = default)
     {
         await gate.WaitAsync(cancellationToken);
         try
@@ -143,12 +173,15 @@ public sealed class MockNeighborhoodBackend(IDemoStateStore store, TimeProvider 
             var current = await GetStateAsync(cancellationToken);
             if (!current.Houses.Any(house => house.Id == houseId))
                 throw new ArgumentException(AppText.Default.Strings.HouseMissing, nameof(houseId));
-            var visits = new HashSet<Guid>(current.Visited);
-            if (visited)
-                visits.Add(houseId);
+            var passport = current.Passport.ToList();
+            var existing = passport.FindIndex(entry => entry.HouseId == houseId);
+            if (collected == (existing >= 0))
+                return;
+            if (collected)
+                passport.Add(new(houseId, clock.GetUtcNow()));
             else
-                visits.Remove(houseId);
-            var updated = new DemoState(current.Houses.ToList(), visits);
+                passport.RemoveAt(existing);
+            var updated = new DemoState(current.Houses.ToList(), passport);
             await store.SaveAsync(updated, cancellationToken);
             state = updated;
         }

@@ -27,9 +27,9 @@ public sealed class BackendInitializationTests
             Assert.Equal(new TimeOnly(16, 0), house.OpensAt);
             Assert.Equal(new TimeOnly(22, 0), house.ClosesAt);
         });
-        Assert.Empty(saved.Visited);
+        Assert.Empty(saved.Passport);
         Assert.Equal(saved.Houses, snapshot.Houses);
-        Assert.True(saved.Visited.SetEquals(snapshot.Visited));
+        Assert.Equal(saved.Passport, snapshot.Passport);
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(1, store.SaveCount);
     }
@@ -39,16 +39,16 @@ public sealed class BackendInitializationTests
     {
         var existing = ExistingState();
         var expectedHouses = existing.Houses.ToArray();
-        var expectedVisits = existing.Visited.ToArray();
+        var expectedPassport = existing.Passport.ToArray();
         var store = new CountingStore(existing);
         var backend = new MockNeighborhoodBackend(store, new FixedClock());
 
         var snapshot = await backend.GetSnapshotAsync();
 
         Assert.Equal(expectedHouses, snapshot.Houses);
-        Assert.Equal(expectedVisits[0], Assert.Single(snapshot.Visited));
+        Assert.Equal(expectedPassport[0], Assert.Single(snapshot.Passport));
         Assert.Equal(expectedHouses, existing.Houses);
-        Assert.Equal(expectedVisits[0], Assert.Single(existing.Visited));
+        Assert.Equal(expectedPassport[0], Assert.Single(existing.Passport));
         Assert.Equal(1, store.LoadCount);
         Assert.Equal(0, store.SaveCount);
         Assert.Null(store.SavedState);
@@ -65,17 +65,17 @@ public sealed class BackendInitializationTests
         var first = await backend.GetSnapshotAsync();
         var initialized = existing ?? Assert.IsType<DemoState>(store.SavedState);
         var expectedHouses = initialized.Houses.ToArray();
-        var expectedVisits = new HashSet<Guid>(initialized.Visited);
+        var expectedPassport = initialized.Passport.ToArray();
         store.State = new([], []);
 
         Assert.NotEmpty(expectedHouses);
         Assert.Equal(expectedHouses, first.Houses);
-        Assert.True(expectedVisits.SetEquals(first.Visited));
+        Assert.Equal(expectedPassport, first.Passport);
         for (var i = 0; i < 3; i++)
         {
             var snapshot = await backend.GetSnapshotAsync();
             Assert.Equal(expectedHouses, snapshot.Houses);
-            Assert.True(expectedVisits.SetEquals(snapshot.Visited));
+            Assert.Equal(expectedPassport, snapshot.Passport);
         }
 
         Assert.Equal(1, store.LoadCount);
@@ -84,7 +84,7 @@ public sealed class BackendInitializationTests
         {
             var saved = Assert.IsType<DemoState>(store.SavedState);
             Assert.Equal(expectedHouses, saved.Houses);
-            Assert.True(expectedVisits.SetEquals(saved.Visited));
+            Assert.Equal(expectedPassport, saved.Passport);
         }
     }
 
@@ -100,7 +100,7 @@ public sealed class BackendInitializationTests
             Address = "14 Make-Believe Lane",
             Status = HouseStatus.Closed
         };
-        return new([first, second], [second.Id]);
+        return new([first, second], [new(second.Id, null)]);
     }
 
     private sealed class FixedClock : TimeProvider
