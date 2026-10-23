@@ -103,16 +103,20 @@ public sealed class LocalizationTests
     }
 
     [Theory]
-    [InlineData("h:mm tt", "5:15 PM – 9:45 PM")]
-    [InlineData("HH:mm", "17:15 – 21:45")]
-    public void NativeHourCycleOverrideIsUsedForBothTimes(string pattern, string expected)
+    [InlineData("h:mm tt")]
+    [InlineData("HH:mm")]
+    public void NativeHourCycleOverrideIsUsedForBothTimes(string pattern)
     {
+        var culture = CultureInfo.GetCultureInfo("en-CA");
+        var opens = new TimeOnly(17, 15);
+        var closes = new TimeOnly(21, 45);
         var text = new AppText(AppText.Default.Strings)
         {
-            FormatTime = time => time.ToString(pattern, CultureInfo.GetCultureInfo("en-CA"))
+            FormatTime = time => time.ToString(pattern, culture)
         };
 
-        Assert.Equal(expected, text.Hours(new(17, 15), new(21, 45)));
+        Assert.Equal($"{opens.ToString(pattern, culture)} – {closes.ToString(pattern, culture)}",
+            text.Hours(opens, closes));
     }
 
     [Fact]
