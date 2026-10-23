@@ -22,10 +22,10 @@ public static class Ui
             LineBreakMode = LineBreakMode.WordWrap
         };
 
-    public static Label Bound(string property, double size = 16, Color? color = null, bool bold = false)
+    public static Label Bound(BindingBase binding, double size = 16, Color? color = null, bool bold = false)
     {
         var label = Text(size: size, color: color, bold: bold);
-        label.SetBinding(Label.TextProperty, property);
+        label.SetBinding(Label.TextProperty, binding);
         return label;
     }
 
@@ -83,21 +83,21 @@ public static class Ui
 
     public static View Errors()
     {
-        var errors = Bound(nameof(ViewModelBase.ErrorMessage), 14, Orange);
+        var errors = Bound(Binding.Create(static (ViewModelBase model) => model.ErrorMessage), 14, Orange);
         errors.AutomationId = "ErrorMessage";
         var spinner = new ActivityIndicator { Color = Orange, HeightRequest = 24 };
-        spinner.SetBinding(ActivityIndicator.IsRunningProperty, nameof(ViewModelBase.IsBusy));
-        spinner.SetBinding(VisualElement.IsVisibleProperty, nameof(ViewModelBase.IsBusy));
+        spinner.SetBinding(ActivityIndicator.IsRunningProperty, static (ViewModelBase model) => model.IsBusy);
+        spinner.SetBinding(VisualElement.IsVisibleProperty, static (ViewModelBase model) => model.IsBusy);
         return new VerticalStackLayout { Spacing = 4, Children = { errors, spinner } };
     }
 
     public static View DemoBanner(string text = "DEMO · Public Cologne venues, not participating hosts · All Halloween details simulated") =>
         Card(Text(text, 12, Mint), new Thickness(12, 10));
 
-    public static View Toggle(string label, string property, string id)
+    public static View Toggle(string label, BindingBase binding, string id)
     {
         var toggle = new Switch { AutomationId = id, OnColor = Orange, HorizontalOptions = LayoutOptions.End };
-        toggle.SetBinding(Switch.IsToggledProperty, property);
+        toggle.SetBinding(Switch.IsToggledProperty, binding);
         SemanticProperties.SetDescription(toggle, label);
         var grid = new Grid { ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)], ColumnSpacing = 12 };
         var title = Text(label, 15);
@@ -107,7 +107,7 @@ public static class Ui
         return grid;
     }
 
-    public static Picker Picker(string title, string items, string index, string id)
+    public static Picker Picker(string title, BindingBase items, BindingBase index, string id)
     {
         var picker = new Picker
         {
