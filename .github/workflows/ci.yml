@@ -75,8 +75,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Install Apple workloads
-        run: dotnet workload install maui-ios maui-maccatalyst --skip-manifest-update
+      - name: Install MAUI workloads
+        run: dotnet workload install maui --skip-manifest-update
 
       - name: Build iOS
         run: >-
@@ -106,8 +106,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Install Windows workload
-        run: dotnet workload install maui-windows --skip-manifest-update
+      - name: Install MAUI workloads
+        run: dotnet workload install maui --skip-manifest-update
 
       - name: Build Windows
         run: dotnet build src/BooRoute/BooRoute.csproj --configuration Release --framework net11.0-windows10.0.19041.0
