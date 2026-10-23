@@ -1,29 +1,33 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using BooRoute.Core;
 using BooRoute.Core.Localization;
 
 namespace BooRoute.ViewModels;
 
-public sealed class HouseCard
+public sealed class HouseCard : INotifyPropertyChanged
 {
+    private readonly AppText text;
+    public event PropertyChangedEventHandler? PropertyChanged;
     public House House { get; }
     public bool Visited { get; }
     public bool IsWelcoming { get; }
     public string Nickname => House.Nickname;
     public string Address => House.Address;
     public string ScareArt { get; }
-    public string Hours { get; }
-    public string Status { get; }
-    public string Features { get; }
-    public string VisitStatus { get; }
-    public string EditDescription { get; }
-    public string ViewDescription { get; }
-    internal string CultureKey { get; }
+    public string Hours { get; private set; } = "";
+    public string Status { get; private set; } = "";
+    public string Features { get; private set; } = "";
+    public string VisitStatus { get; private set; } = "";
+    public string EditDescription { get; private set; } = "";
+    public string ViewDescription { get; private set; } = "";
+    public string ViewButtonText => text.Strings.VisitDetails;
+    public string EditButtonText => text.Strings.EditHouse;
+    internal string CultureKey { get; private set; } = "";
 
     public HouseCard(House house, bool visited, DateTimeOffset localNow, AppText? text = null)
     {
-        text ??= AppText.Default;
-        CultureKey = CurrentCultureKey;
+        this.text = text ?? AppText.Default;
         House = house;
         Visited = visited;
         IsWelcoming = house.IsWelcoming(localNow);
@@ -33,8 +37,14 @@ public sealed class HouseCard
             ScareLevel.Spooky => "scare_spooky.png",
             _ => "scare_scary.png"
         };
-        Hours = text.Hours(house.OpensAt, house.ClosesAt);
-        Status = house.Status switch
+        RefreshLocalization();
+    }
+
+    public void RefreshLocalization()
+    {
+        CultureKey = CurrentCultureKey;
+        Hours = text.Hours(House.OpensAt, House.ClosesAt);
+        Status = House.Status switch
         {
             HouseStatus.OutOfTreats => text.Strings.OutOfTreats,
             HouseStatus.Closed => text.Strings.Closed,
@@ -42,13 +52,14 @@ public sealed class HouseCard
         };
         Features = string.Join(" · ", new[]
         {
-            text.ScareName(house.ScareLevel),
-            house.QuietVisits ? text.Strings.QuietVisits : null,
-            house.StepFreeAccess ? text.Strings.StepFree : null
+            text.ScareName(House.ScareLevel),
+            House.QuietVisits ? text.Strings.QuietVisits : null,
+            House.StepFreeAccess ? text.Strings.StepFree : null
         }.Where(value => value is not null));
-        VisitStatus = visited ? text.Strings.Visited : "";
-        EditDescription = text.Strings.EditHouseDescriptionFormat(house.Nickname);
-        ViewDescription = text.Strings.ViewHouseDescriptionFormat(house.Nickname);
+        VisitStatus = Visited ? text.Strings.Visited : "";
+        EditDescription = text.Strings.EditHouseDescriptionFormat(House.Nickname);
+        ViewDescription = text.Strings.ViewHouseDescriptionFormat(House.Nickname);
+        PropertyChanged?.Invoke(this, new(null));
     }
 
     internal static string CurrentCultureKey =>

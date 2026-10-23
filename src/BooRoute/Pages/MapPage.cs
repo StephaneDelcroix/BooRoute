@@ -6,19 +6,19 @@ using Map = Microsoft.Maui.Controls.Maps.Map;
 
 namespace BooRoute.Pages;
 
-public sealed class MapPage : ContentPage
+public sealed class MapPage : LocalizedPage
 {
     private readonly MapViewModel viewModel;
     private readonly Map map;
 
-    public MapPage(MapViewModel viewModel)
+    public MapPage(MapViewModel viewModel) : base(viewModel)
     {
         this.viewModel = viewModel;
         BindingContext = viewModel;
         BackgroundColor = Ui.Midnight;
         SafeAreaEdges = SafeAreaEdges.Container;
         var text = viewModel.Text.Strings;
-        Title = text.Map;
+        Localize(() => Title = text.Map);
 
         map = new Map(MapSpan.FromCenterAndRadius(
             new Location(DemoMap.CenterLatitude, DemoMap.CenterLongitude), Distance.FromMeters(DemoMap.InitialRadiusMeters)))
@@ -27,7 +27,18 @@ public sealed class MapPage : ContentPage
             MapType = MapType.Street,
             IsShowingUser = false
         };
-        SemanticProperties.SetDescription(map, text.MapAccessibility);
+        Localize(() =>
+        {
+            SemanticProperties.SetDescription(map, text.MapAccessibility);
+            foreach (var pin in map.Pins)
+            {
+                if (pin.BindingContext is HouseCard card)
+                {
+                    card.RefreshLocalization();
+                    SetPinLabels(pin, card);
+                }
+            }
+        });
 
         var summary = Ui.Bound(Binding.Create(static (MapViewModel model) => model.Summary), 14, Ui.Muted);
         summary.AutomationId = "MapHouseCountLabel";
@@ -37,8 +48,8 @@ public sealed class MapPage : ContentPage
             Margin = new Thickness(22, 12, 22, 10),
             Children =
             {
-                Ui.Heading("heading_map.png", text.MapHeading, 26),
-                Ui.DemoBanner(text.MapBanner),
+                Heading("heading_map.png", () => text.MapHeading, 26),
+                Banner(() => text.MapBanner),
                 summary,
                 Ui.Errors()
             }
@@ -53,6 +64,12 @@ public sealed class MapPage : ContentPage
 
     private void OnHousesChanged(object? sender, EventArgs e) => UpdatePins();
 
+    private void SetPinLabels(Pin pin, HouseCard card)
+    {
+        pin.Label = $"{card.Nickname} · {viewModel.Text.ScareName(card.House.ScareLevel)}";
+        pin.Address = string.IsNullOrEmpty(card.VisitStatus) ? card.Status : $"{card.Status} · {card.VisitStatus}";
+    }
+
     private void UpdatePins()
     {
         map.Pins.Clear();
@@ -60,11 +77,11 @@ public sealed class MapPage : ContentPage
         {
             var pin = new Pin
             {
-                Label = $"{card.Nickname} · {viewModel.Text.ScareName(card.House.ScareLevel)}",
-                Address = string.IsNullOrEmpty(card.VisitStatus) ? card.Status : $"{card.Status} · {card.VisitStatus}",
+                BindingContext = card,
                 Location = new Location(latitude, longitude),
                 Type = PinType.Place
             };
+            SetPinLabels(pin, card);
             var house = card.House;
             pin.InfoWindowClicked += async (_, args) =>
             {

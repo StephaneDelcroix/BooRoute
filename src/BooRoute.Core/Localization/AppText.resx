@@ -89,10 +89,11 @@
   <data name="AddressRequired" xml:space="preserve"><value>Enter a public venue or fictional address.</value></data>
   <data name="PublicVenueDescription" xml:space="preserve"><value>Demo stop at {0}. This is a real public venue, not a registered Halloween host. Treats, welcoming hours, scare levels, quiet visits and accessibility are simulated. Do not visit for treats.</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="OpenSettings" xml:space="preserve"><value>Open settings</value></data>
   <data name="Locale" xml:space="preserve"><value>Language and region</value></data>
   <data name="SystemLocale" xml:space="preserve"><value>Use device settings</value></data>
   <data name="ApplyLocale" xml:space="preserve"><value>Apply language and region</value></data>
-  <data name="LocaleNotice" xml:space="preserve"><value>Applies immediately and is saved on this device. Save edits first: open forms will close. House names, addresses, descriptions and private visits are not changed.</value></data>
+  <data name="LocaleNotice" xml:space="preserve"><value>Applies immediately and is saved on this device. Open forms and filters stay as they are. House names, addresses, descriptions and private visits are not changed.</value></data>
   <data name="LocalePreview" xml:space="preserve"><value>Time format: {0}</value></data>
   <data name="Map" xml:space="preserve"><value>Map</value></data>
   <data name="MapHeading" xml:space="preserve"><value>The demo neighbourhood</value></data>

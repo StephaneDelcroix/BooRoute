@@ -21,10 +21,15 @@ public sealed class AppText
     public AppTextLocalized Strings { get; }
     public static CultureInfo FormattingCulture => selectedCultures?.Formatting ?? CultureInfo.CurrentCulture;
     public static CultureInfo ResourceCulture => selectedCultures?.Resources ?? CultureInfo.CurrentUICulture;
-    public static void UseCultures(CultureInfo? formatting, CultureInfo? resources) =>
+    public static event EventHandler? CultureChanged;
+
+    public static void UseCultures(CultureInfo? formatting, CultureInfo? resources)
+    {
         selectedCultures = formatting is null && resources is null ? null :
             new(formatting ?? throw new ArgumentNullException(nameof(formatting)),
                 resources ?? throw new ArgumentNullException(nameof(resources)));
+        CultureChanged?.Invoke(null, EventArgs.Empty);
+    }
 
     public Func<TimeOnly, string> FormatTime { get; init; } =
         static time => time.ToString("t", FormattingCulture);

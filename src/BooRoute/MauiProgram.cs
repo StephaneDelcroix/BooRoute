@@ -16,6 +16,9 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+#if ANDROID
+            .ConfigureMauiHandlers(handlers => handlers.AddHandler<TimePicker, LocalizedTimePickerHandler>())
+#endif
 #if !WINDOWS
             .UseMauiMaps()
 #endif

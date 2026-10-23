@@ -248,12 +248,15 @@ remain unverified.
 
 ## Canadian English and French
 
-Open **Settings → Language and region** and choose **Use device settings**,
+Open the toolbar gear in **Explore**, **My visits**, or **Demo host**, or the
+existing **Settings** tab, then choose **Use device settings**,
 **English (Canada)**, or **Français (Canada)**, then apply. Navigation, pages,
 map labels, validation and regional time formatting update immediately; the
 choice persists across restarts. Settings becomes **Réglages** in French.
-Applying the setting closes open detail/editor pages, so save edits first.
-Device mode follows the system app language and regional time settings.
+Applying the setting updates existing pages in place: navigation stacks, unsaved
+editor fields, selected filters, map viewport, artwork, and safe areas are retained.
+Device mode rereads the system/per-app language and regional settings on return
+to device mode and when the app resumes.
 Canadian English is the English fallback; French resources cover `fr-CA` and
 other French locales. Android 13+ and iOS also expose system per-app language
 selection; the explicit in-app selection takes precedence.
@@ -271,7 +274,8 @@ reset visits, or reseed data. The no-participation and simulated-accessibility
 warnings remain visible in both languages.
 
 House cards and native time-picker fields use the selected locale's short-time
-formatter. Device mode preserves the native user's 12/24-hour preference.
+formatter. All three choices preserve the native user's forced 12/24-hour preference,
+including native time-picker dialogs, without changing device language or timezone.
 Welcoming rules still use device-local wall time for this single-device demo.
 Timezone coverage includes Newfoundland's half-hour offset, the autumn clock
 change, Saskatchewan, and Yukon. A future multi-region service would need each

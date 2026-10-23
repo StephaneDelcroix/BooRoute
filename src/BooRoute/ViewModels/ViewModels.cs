@@ -35,12 +35,19 @@ public sealed class AsyncCommand(Func<object?, Task> execute) : ICommand
 
 public abstract class ViewModelBase(ILoggerFactory logging, AppText text) : INotifyPropertyChanged
 {
-    private string errorMessage = "";
+    private Func<string>? errorMessage;
     private bool isBusy;
-    public string ErrorMessage { get => errorMessage; protected set => Set(ref errorMessage, value); }
+    public string ErrorMessage => errorMessage?.Invoke() ?? "";
     public bool IsBusy { get => isBusy; private set => Set(ref isBusy, value); }
     public event PropertyChangedEventHandler? PropertyChanged;
     public AppText Text { get; } = text;
+    public virtual void RefreshLocalization() => Changed(nameof(ErrorMessage));
+
+    protected void SetError(Func<string>? message)
+    {
+        errorMessage = message;
+        Changed(nameof(ErrorMessage));
+    }
 
     protected void Changed([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new(name));
@@ -56,7 +63,7 @@ public abstract class ViewModelBase(ILoggerFactory logging, AppText text) : INot
 
     protected async Task RunAsync(Func<Task> action)
     {
-        ErrorMessage = "";
+        SetError(null);
         IsBusy = true;
         try
         {
@@ -66,12 +73,12 @@ public abstract class ViewModelBase(ILoggerFactory logging, AppText text) : INot
                                       JsonException or ArgumentException or InvalidOperationException)
         {
             logging.CreateLogger(GetType()).LogError(error, "BooRoute action failed");
-            ErrorMessage = error switch
+            SetError(() => error switch
             {
                 JsonException or InvalidDataException => Text.Strings.SavedDataInvalid,
                 IOException or UnauthorizedAccessException => Text.Strings.StorageFailed,
                 _ => Text.Strings.ActionFailed
-            };
+            });
         }
         finally
         {
@@ -99,6 +106,7 @@ public sealed class NeighborhoodViewModel : ViewModelBase
     public ICommand OpenHouseCommand { get; }
     public ICommand AddHouseCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand OpenSettingsCommand { get; }
     public string[] ScareOptions =>
         [Text.Strings.EveryScareLevel, .. Enum.GetValues<ScareLevel>().Select(Text.ScareName)];
     public string Summary { get => summary; private set => Set(ref summary, value); }
@@ -127,6 +135,7 @@ public sealed class NeighborhoodViewModel : ViewModelBase
         Mode = mode;
         summary = Text.Strings.InitialSummary;
         RefreshCommand = new AsyncCommand(_ => RefreshAsync());
+        OpenSettingsCommand = new AsyncCommand(_ => RunAsync(() => Shell.Current.GoToAsync("//settings")));
         OpenHouseCommand = new AsyncCommand(parameter => RunAsync(async () =>
         {
             if (parameter is not HouseCard card)
@@ -156,6 +165,15 @@ public sealed class NeighborhoodViewModel : ViewModelBase
         {
             refreshGate.Release();
         }
+    }
+
+    public override void RefreshLocalization()
+    {
+        base.RefreshLocalization();
+        foreach (var card in Houses)
+            card.RefreshLocalization();
+        Summary = snapshot is null ? Text.Strings.InitialSummary
+            : Text.Summary(Houses.Count, Houses.Count(card => card.IsWelcoming));
     }
 
     private void ApplyFilters()
@@ -201,6 +219,12 @@ public sealed class HouseDetailsViewModel : ViewModelBase
     }
 
     private INeighborhoodBackend Backend { get; }
+    public override void RefreshLocalization()
+    {
+        base.RefreshLocalization();
+        Card.RefreshLocalization();
+        Changed(nameof(VisitButtonText));
+    }
     public Task LoadAsync() => RunAsync(async () =>
     {
         visited = (await Backend.GetSnapshotAsync()).Visited.Contains(House.Id);
@@ -221,7 +245,8 @@ public sealed class HostEditorViewModel : ViewModelBase
     private bool quietVisits;
     private bool stepFreeAccess;
 
-    public string Heading { get; }
+    private readonly bool isNew;
+    public string Heading => isNew ? Text.Strings.NewHouseHeading : Text.Strings.EditHouseHeading;
     public string Nickname { get => nickname; set => Set(ref nickname, value); }
     public string Address { get => address; set => Set(ref address, value); }
     public string Description { get => description; set => Set(ref description, value); }
@@ -239,7 +264,7 @@ public sealed class HostEditorViewModel : ViewModelBase
         ILoggerFactory logging, AppText text, House? house = null) : base(logging, text)
     {
         id = house?.Id ?? Guid.NewGuid();
-        Heading = house is null ? Text.Strings.NewHouseHeading : Text.Strings.EditHouseHeading;
+        isNew = house is null;
         Nickname = house?.Nickname ?? "";
         Address = house?.Address ?? "";
         Description = house?.Description ?? "";
@@ -251,19 +276,21 @@ public sealed class HostEditorViewModel : ViewModelBase
         StepFreeAccess = house?.StepFreeAccess ?? false;
         SaveCommand = new AsyncCommand(_ => RunAsync(async () =>
         {
-            var updated = new House(id, Nickname.Trim(), Address.Trim(), Description.Trim(),
-                TimeOnly.FromTimeSpan(OpensAt), TimeOnly.FromTimeSpan(ClosesAt),
-                (ScareLevel)ScareIndex, (HouseStatus)StatusIndex, QuietVisits, StepFreeAccess);
+            var updated = EditedHouse();
             var errors = updated.Validate();
             if (errors.Count != 0)
             {
-                ErrorMessage = string.Join(Environment.NewLine, errors);
+                SetError(() => string.Join(Environment.NewLine, EditedHouse().Validate()));
                 return;
             }
             await backend.SaveHouseAsync(updated);
             await Shell.Current.Navigation.PopAsync();
         }));
     }
+
+    private House EditedHouse() => new(id, Nickname.Trim(), Address.Trim(), Description.Trim(),
+        TimeOnly.FromTimeSpan(OpensAt), TimeOnly.FromTimeSpan(ClosesAt),
+        (ScareLevel)ScareIndex, (HouseStatus)StatusIndex, QuietVisits, StepFreeAccess);
 }
 
 public sealed record MapHouse(HouseCard Card, double Latitude, double Longitude);
@@ -305,6 +332,8 @@ public sealed class MapViewModel : ViewModelBase
     private readonly ILoggerFactory logging;
     private readonly HouseLocator locator;
     private string summary;
+    private int missing;
+    private bool loaded;
 
     public IReadOnlyList<MapHouse> Houses { get; private set; } = [];
     public string Summary { get => summary; private set => Set(ref summary, value); }
@@ -338,11 +367,21 @@ public sealed class MapViewModel : ViewModelBase
         var positions = DemoMap.SeparateDuplicates(located.Select(item => item.Position).ToList());
         Houses = located.Select((item, index) => new MapHouse(item.Card, positions[index].Latitude, positions[index].Longitude)).ToList();
 
-        var missing = cards.Count - Houses.Count;
-        Summary = Text.Strings.MapSummaryFormat(Houses.Count, Houses.Count(house => house.Card.IsWelcoming)) +
-                  (missing > 0 ? Text.Strings.MapMissingFormat(missing) : "");
+        missing = cards.Count - Houses.Count;
+        loaded = true;
+        RefreshLocalization();
         HousesChanged?.Invoke(this, EventArgs.Empty);
     });
+
+    public override void RefreshLocalization()
+    {
+        base.RefreshLocalization();
+        foreach (var house in Houses)
+            house.Card.RefreshLocalization();
+        Summary = !loaded ? Text.Strings.MapLoading
+            : Text.Strings.MapSummaryFormat(Houses.Count, Houses.Count(house => house.Card.IsWelcoming)) +
+              (missing > 0 ? Text.Strings.MapMissingFormat(missing) : "");
+    }
 
     public Task OpenHouseAsync(House house) => RunAsync(() =>
         Shell.Current.Navigation.PushAsync(new HouseDetailsPage(new(backend, clock, logging, Text, house))));

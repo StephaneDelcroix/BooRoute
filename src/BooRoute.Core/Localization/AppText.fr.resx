@@ -89,10 +89,11 @@
   <data name="AddressRequired" xml:space="preserve"><value>Entrez un lieu public ou une adresse fictive.</value></data>
   <data name="PublicVenueDescription" xml:space="preserve"><value>Arrêt démo à {0}. Ce lieu public réel n’est pas un hôte d’Halloween inscrit. Les friandises, heures, niveaux de frayeur, visites calmes et accès sont simulés. Ne venez pas chercher de friandises.</value></data>
   <data name="Settings" xml:space="preserve"><value>Réglages</value></data>
+  <data name="OpenSettings" xml:space="preserve"><value>Ouvrir les réglages</value></data>
   <data name="Locale" xml:space="preserve"><value>Langue et région</value></data>
   <data name="SystemLocale" xml:space="preserve"><value>Utiliser les réglages de l’appareil</value></data>
   <data name="ApplyLocale" xml:space="preserve"><value>Appliquer la langue et la région</value></data>
-  <data name="LocaleNotice" xml:space="preserve"><value>Appliqué immédiatement et enregistré sur cet appareil. Enregistrez vos modifications : les formulaires ouverts seront fermés. Les noms, adresses, descriptions et visites privées restent inchangés.</value></data>
+  <data name="LocaleNotice" xml:space="preserve"><value>Appliqué immédiatement et enregistré sur cet appareil. Les formulaires ouverts et les filtres sont conservés. Les noms, adresses, descriptions et visites privées restent inchangés.</value></data>
   <data name="LocalePreview" xml:space="preserve"><value>Format de l’heure : {0}</value></data>
   <data name="Map" xml:space="preserve"><value>Carte</value></data>
   <data name="MapHeading" xml:space="preserve"><value>Le voisinage de démonstration</value></data>

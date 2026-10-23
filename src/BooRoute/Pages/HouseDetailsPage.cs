@@ -2,23 +2,23 @@ using BooRoute.ViewModels;
 
 namespace BooRoute.Pages;
 
-public sealed class HouseDetailsPage : ContentPage
+public sealed class HouseDetailsPage : LocalizedPage
 {
     private readonly HouseDetailsViewModel viewModel;
     private readonly PumpkinConfettiView confetti = new();
 
-    public HouseDetailsPage(HouseDetailsViewModel viewModel)
+    public HouseDetailsPage(HouseDetailsViewModel viewModel) : base(viewModel)
     {
         this.viewModel = viewModel;
         var text = viewModel.Text.Strings;
         BindingContext = viewModel;
-        Title = text.HouseDetails;
+        Localize(() => Title = text.HouseDetails);
         BackgroundColor = Ui.Midnight;
         var house = viewModel.House;
         var card = viewModel.Card;
         var visit = Ui.Button("", "ToggleVisitedButton", viewModel.ToggleVisitedCommand);
-        visit.SetBinding(Button.TextProperty, static (HouseDetailsViewModel model) => model.VisitButtonText);
-        var status = Ui.Text(card.Status, 17, card.IsWelcoming ? Ui.Mint : Ui.Muted, true);
+        visit.SetBinding(Microsoft.Maui.Controls.Button.TextProperty, static (HouseDetailsViewModel model) => model.VisitButtonText);
+        var status = Text(() => card.Status, 17, card.IsWelcoming ? Ui.Mint : Ui.Muted, true);
         status.AutomationId = "HouseStatusLabel";
         var name = Ui.Text(house.Nickname, 32, bold: true);
         name.AutomationId = "HouseNicknameLabel";
@@ -32,22 +32,22 @@ public sealed class HouseDetailsPage : ContentPage
                 Children =
                 {
                     Ui.Art(card.ScareArt, 72), name, Ui.Text(house.Address, 16, Ui.Muted),
-                    Ui.DemoBanner(text.FictionalDestination),
-                    status, Ui.Text(text.DailyHoursDescriptionFormat(card.Hours), 17),
+                    Banner(() => text.FictionalDestination),
+                    status, Text(() => text.DailyHoursDescriptionFormat(card.Hours), 17),
                     Ui.Text(house.Description, 18),
                     Ui.Card(new VerticalStackLayout
                     {
                         Spacing = 12,
                         Children =
                         {
-                            Ui.Text(text.ScareDescriptionFormat(viewModel.Text.ScareName(house.ScareLevel)), 17, bold: true),
-                            Ui.Text(house.QuietVisits ? text.QuietAvailable : text.QuietNotIndicated, 16),
-                            Ui.Text(house.StepFreeAccess ? text.StepFreeIndicated : text.StepFreeNotIndicated, 16),
-                            Ui.Text(text.AccessibilityDisclaimer, 13, Ui.Muted)
+                            Text(() => text.ScareDescriptionFormat(viewModel.Text.ScareName(house.ScareLevel)), 17, bold: true),
+                            Text(() => house.QuietVisits ? text.QuietAvailable : text.QuietNotIndicated, 16),
+                            Text(() => house.StepFreeAccess ? text.StepFreeIndicated : text.StepFreeNotIndicated, 16),
+                            Text(() => text.AccessibilityDisclaimer, 13, Ui.Muted)
                         }
                     }),
                     Ui.Errors(), visit,
-                    Ui.Text(text.VisitPrivacy, 13, Ui.Muted)
+                    Text(() => text.VisitPrivacy, 13, Ui.Muted)
                 }
             }
         };

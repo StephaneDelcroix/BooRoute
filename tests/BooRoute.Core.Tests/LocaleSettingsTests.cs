@@ -6,6 +6,46 @@ namespace BooRoute.Core.Tests;
 public sealed class LocaleSettingsTests
 {
     [Fact]
+    public void ReturningToDeviceModeReadsCurrentCulturesInsteadOfStartupValues()
+    {
+        var device = (CultureInfo.GetCultureInfo("en-US"), CultureInfo.GetCultureInfo("en-CA"));
+        var settings = new LocaleSettings(new MemoryLocaleStore(), () => device);
+        settings.Select("fr-CA");
+        device = (CultureInfo.GetCultureInfo("de-DE"), CultureInfo.GetCultureInfo("fr-FR"));
+        settings.Select("");
+
+        Assert.Equal("de-DE", settings.Culture.Name);
+        Assert.Equal("fr-FR", settings.UICulture.Name);
+    }
+
+    [Fact]
+    public void ResumeRefreshesDeviceModeWithoutWritingPreferences()
+    {
+        var store = new MemoryLocaleStore();
+        var device = (CultureInfo.GetCultureInfo("en-US"), CultureInfo.GetCultureInfo("en-CA"));
+        var settings = new LocaleSettings(store, () => device);
+        device = (CultureInfo.GetCultureInfo("fr-CA"), CultureInfo.GetCultureInfo("fr-CA"));
+        settings.RefreshDeviceCultures();
+
+        Assert.Equal("fr-CA", settings.Culture.Name);
+        Assert.Equal("fr-CA", settings.UICulture.Name);
+        Assert.Equal(0, store.Writes);
+    }
+
+    [Fact]
+    public void DeviceRefreshDoesNotReplaceExplicitChoice()
+    {
+        var device = (CultureInfo.GetCultureInfo("en-US"), CultureInfo.GetCultureInfo("en-CA"));
+        var settings = new LocaleSettings(new MemoryLocaleStore(), () => device);
+        settings.Select("fr-CA");
+        device = (CultureInfo.GetCultureInfo("de-DE"), CultureInfo.GetCultureInfo("de-DE"));
+        settings.RefreshDeviceCultures();
+
+        Assert.Equal("fr-CA", settings.Culture.Name);
+        Assert.Equal("fr-CA", settings.UICulture.Name);
+    }
+
+    [Fact]
     public void DeviceModePreservesSeparateLanguageAndRegionalSettings()
     {
         var settings = Create(new MemoryLocaleStore());
@@ -76,11 +116,13 @@ public sealed class LocaleSettingsTests
     {
         public string Locale { get; set; } = "";
         public bool FailWrites { get; set; }
+        public int Writes { get; private set; }
         public string Read() => Locale;
         public void Write(string locale)
         {
             if (FailWrites)
                 throw new IOException("Simulated preference write failure.");
+            Writes++;
             Locale = locale;
         }
     }

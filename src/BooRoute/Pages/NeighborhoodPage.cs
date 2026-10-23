@@ -3,14 +3,14 @@ using BooRoute.ViewModels;
 
 namespace BooRoute.Pages;
 
-public sealed class NeighborhoodPage : ContentPage
+public sealed class NeighborhoodPage : LocalizedPage
 {
     private readonly NeighborhoodViewModel viewModel;
     private readonly IDispatcherTimer timer;
     private static readonly WelcomingColorConverter StatusColorConverter = new();
     private static readonly ImageFileConverter ArtConverter = new();
 
-    public NeighborhoodPage(NeighborhoodViewModel viewModel)
+    public NeighborhoodPage(NeighborhoodViewModel viewModel) : base(viewModel)
     {
         this.viewModel = viewModel;
         var text = viewModel.Text.Strings;
@@ -19,13 +19,25 @@ public sealed class NeighborhoodPage : ContentPage
         // CollectionView has no SafeAreaEdges of its own: keep the list below the nav bar,
         // but let it run to the bottom edge so it scrolls behind the tab bar.
         SafeAreaEdges = new(SafeAreaRegions.Container, SafeAreaRegions.Container, SafeAreaRegions.Container, SafeAreaRegions.None);
-        Title = viewModel.Mode switch
+        Localize(() => Title = viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.DemoHost,
             NeighborhoodMode.Visited => text.MyVisits,
             _ => text.Explore
+        });
+        var settings = new ToolbarItem
+        {
+            AutomationId = "SettingsToolbarItem",
+            IconImageSource = "settings.png",
+            Command = viewModel.OpenSettingsCommand
         };
-        var heading = viewModel.Mode switch
+        Localize(() =>
+        {
+            settings.Text = text.Settings;
+            SemanticProperties.SetDescription(settings, text.OpenSettings);
+        });
+        ToolbarItems.Add(settings);
+        string HeadingText() => viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.HostHeading,
             NeighborhoodMode.Visited => text.VisitsHeading,
@@ -37,7 +49,7 @@ public sealed class NeighborhoodPage : ContentPage
             NeighborhoodMode.Visited => "heading_visits.png",
             _ => "heading_explore.png"
         };
-        var subtitle = viewModel.Mode switch
+        string Subtitle() => viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.HostSubtitle,
             NeighborhoodMode.Visited => text.VisitsSubtitle,
@@ -47,25 +59,24 @@ public sealed class NeighborhoodPage : ContentPage
         {
             Spacing = 10,
             Margin = new Thickness(0, 12, 0, 10),
-            Children = { Ui.Heading(headingArt, heading), Ui.Text(subtitle, 14, Ui.Muted), Ui.DemoBanner() }
+            Children = { Heading(headingArt, HeadingText), Text(Subtitle, 14, Ui.Muted), Banner(() => text.DemoBanner) }
         };
         if (viewModel.Mode == NeighborhoodMode.Explore)
         {
-            header.Add(Ui.Toggle(text.WelcomingOnly,
+            header.Add(Toggle(() => text.WelcomingOnly,
                 Binding.Create(static (NeighborhoodViewModel model) => model.WelcomingOnly), "WelcomingOnlySwitch"));
-            header.Add(Ui.Toggle(text.QuietOnly,
+            header.Add(Toggle(() => text.QuietOnly,
                 Binding.Create(static (NeighborhoodViewModel model) => model.QuietOnly), "QuietOnlySwitch"));
-            header.Add(Ui.Picker(text.ScareLevel,
-                Binding.Create(static (NeighborhoodViewModel model) => model.ScareOptions),
+            header.Add(Picker(() => text.ScareLevel, () => viewModel.ScareOptions,
                 Binding.Create(static (NeighborhoodViewModel model) => model.ScareIndex), "ScareFilterPicker"));
         }
         if (viewModel.Mode == NeighborhoodMode.Host)
-            header.Add(Ui.Button(text.RegisterHouse, "AddHouseButton", viewModel.AddHouseCommand));
+            header.Add(Button(() => text.RegisterHouse, "AddHouseButton", viewModel.AddHouseCommand));
         var summary = Ui.Bound(Binding.Create(static (NeighborhoodViewModel model) => model.Summary), 14, Ui.Muted);
         summary.AutomationId = "HouseCountLabel";
         header.Add(summary);
         header.Add(Ui.Errors());
-        header.Add(Ui.Button(text.RefreshNeighbourhood, "RefreshButton", viewModel.RefreshCommand, secondary: true));
+        header.Add(Button(() => text.RefreshNeighbourhood, "RefreshButton", viewModel.RefreshCommand, secondary: true));
 
         var layout = new GridItemsLayout(1, ItemsLayoutOrientation.Vertical)
         {
@@ -86,8 +97,8 @@ public sealed class NeighborhoodPage : ContentPage
                 Spacing = 12,
                 Children =
                 {
-                    Ui.Text(text.EmptyHeading, 24, bold: true),
-                    Ui.Text(viewModel.Mode == NeighborhoodMode.Visited
+                    Text(() => text.EmptyHeading, 24, bold: true),
+                    Text(() => viewModel.Mode == NeighborhoodMode.Visited
                         ? text.EmptyVisits
                         : text.EmptyHouses, 16, Ui.Muted)
                 }
@@ -121,11 +132,13 @@ public sealed class NeighborhoodPage : ContentPage
         var art = Ui.Art(null, 36);
         art.SetBinding(Image.SourceProperty, static (HouseCard card) => card.ScareArt, converter: ArtConverter);
         top.Add(art, 1);
-        var button = Ui.Button(viewModel.Mode == NeighborhoodMode.Host
-                ? viewModel.Text.Strings.EditHouse : viewModel.Text.Strings.VisitDetails,
-            "OpenHouseButton", viewModel.OpenHouseCommand, secondary: true);
+        var button = Ui.Button("", "OpenHouseButton", viewModel.OpenHouseCommand, secondary: true);
+        if (viewModel.Mode == NeighborhoodMode.Host)
+            button.SetBinding(Microsoft.Maui.Controls.Button.TextProperty, static (HouseCard card) => card.EditButtonText);
+        else
+            button.SetBinding(Microsoft.Maui.Controls.Button.TextProperty, static (HouseCard card) => card.ViewButtonText);
         button.BackgroundColor = Color.FromArgb("#3A2B4F");
-        button.SetBinding(Button.CommandParameterProperty, static (HouseCard card) => card);
+        button.SetBinding(Microsoft.Maui.Controls.Button.CommandParameterProperty, static (HouseCard card) => card);
         if (viewModel.Mode == NeighborhoodMode.Host)
             button.SetBinding(SemanticProperties.DescriptionProperty, static (HouseCard card) => card.EditDescription);
         else

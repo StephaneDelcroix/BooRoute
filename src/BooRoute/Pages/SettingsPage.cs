@@ -4,19 +4,23 @@ using Microsoft.Extensions.Logging;
 
 namespace BooRoute.Pages;
 
-public sealed class SettingsPage : ContentPage
+public sealed class SettingsPage : LocalizedPage
 {
     public SettingsPage(LocaleSettings settings, AppText text, ILoggerFactory logging, Action applyLocale)
+        : this(new SettingsViewModel(settings, text, logging, applyLocale), text)
     {
-        var viewModel = new SettingsViewModel(settings, text, logging, applyLocale);
+    }
+
+    private SettingsPage(SettingsViewModel viewModel, AppText text) : base(viewModel)
+    {
         var strings = text.Strings;
         BindingContext = viewModel;
-        Title = strings.Settings;
+        Localize(() => Title = strings.Settings);
         BackgroundColor = Ui.Midnight;
         SafeAreaEdges = SafeAreaEdges.Container;
-        var heading = Ui.Text(strings.Settings, 29, bold: true);
+        var heading = Text(() => strings.Settings, 29, bold: true);
         SemanticProperties.SetHeadingLevel(heading, SemanticHeadingLevel.Level1);
-        var preview = Ui.Text(strings.LocalePreviewFormat(text.FormatTime(new TimeOnly(17, 15))), 16, Ui.Muted);
+        var preview = Text(() => strings.LocalePreviewFormat(text.FormatTime(new TimeOnly(17, 15))), 16, Ui.Muted);
         preview.AutomationId = "LocalePreviewLabel";
         Content = new ScrollView
         {
@@ -27,14 +31,13 @@ public sealed class SettingsPage : ContentPage
                 Children =
                 {
                     heading,
-                    Ui.Text(strings.Locale, 18, bold: true),
-                    Ui.Picker(strings.Locale,
-                        Binding.Create(static (SettingsViewModel model) => model.Options),
+                    Text(() => strings.Locale, 18, bold: true),
+                    Picker(() => strings.Locale, () => viewModel.Options,
                         Binding.Create(static (SettingsViewModel model) => model.SelectedIndex), "LocalePicker"),
                     preview,
-                    Ui.Text(strings.LocaleNotice, 15, Ui.Muted),
+                    Text(() => strings.LocaleNotice, 15, Ui.Muted),
                     Ui.Errors(),
-                    Ui.Button(strings.ApplyLocale, "ApplyLocaleButton", viewModel.ApplyCommand)
+                    Button(() => strings.ApplyLocale, "ApplyLocaleButton", viewModel.ApplyCommand)
                 }
             }
         };
@@ -43,14 +46,13 @@ public sealed class SettingsPage : ContentPage
     internal sealed class SettingsViewModel : ViewModelBase
     {
         private int selectedIndex;
-        public string[] Options { get; }
+        public string[] Options => [Text.Strings.SystemLocale, "English (Canada)", "Français (Canada)"];
         public int SelectedIndex { get => selectedIndex; set => Set(ref selectedIndex, value); }
         public System.Windows.Input.ICommand ApplyCommand { get; }
 
         public SettingsViewModel(LocaleSettings settings, AppText text, ILoggerFactory logging, Action applyLocale)
             : base(logging, text)
         {
-            Options = [text.Strings.SystemLocale, "English (Canada)", "Français (Canada)"];
             SelectedIndex = LocaleSettings.SupportedLocales.ToList().IndexOf(settings.SelectedLocale);
             ApplyCommand = new AsyncCommand(_ => RunAsync(() =>
             {

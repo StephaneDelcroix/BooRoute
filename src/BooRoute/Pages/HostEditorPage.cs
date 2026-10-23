@@ -3,13 +3,13 @@ using BooRoute.Core.Localization;
 
 namespace BooRoute.Pages;
 
-public sealed class HostEditorPage : ContentPage
+public sealed class HostEditorPage : LocalizedPage
 {
-    public HostEditorPage(HostEditorViewModel viewModel)
+    public HostEditorPage(HostEditorViewModel viewModel) : base(viewModel)
     {
         BindingContext = viewModel;
         var text = viewModel.Text.Strings;
-        Title = text.DemoHouse;
+        Localize(() => Title = text.DemoHouse);
         BackgroundColor = Ui.Midnight;
         HideSoftInputOnTapped = true;
         var fields = new VerticalStackLayout
@@ -18,43 +18,40 @@ public sealed class HostEditorPage : ContentPage
             Spacing = 14,
             Children =
             {
-                Ui.Heading("heading_host.png", viewModel.Heading),
-                Ui.DemoBanner(text.HostDemoBanner),
-                Ui.Text(text.HouseNickname, 15, bold: true),
+                Heading("heading_host.png", () => viewModel.Heading),
+                Banner(() => text.HostDemoBanner),
+                Text(() => text.HouseNickname, 15, bold: true),
                 Entry(Binding.Create(static (HostEditorViewModel model) => model.Nickname),
-                    text.NicknamePlaceholder, text.HouseNickname, "NicknameEntry", 60),
-                Ui.Text(text.FictionalAddress, 15, bold: true),
+                    () => text.NicknamePlaceholder, () => text.HouseNickname, "NicknameEntry", 60),
+                Text(() => text.FictionalAddress, 15, bold: true),
                 Entry(Binding.Create(static (HostEditorViewModel model) => model.Address),
-                    text.AddressPlaceholder, text.FictionalAddress, "AddressEntry", 120),
-                Ui.Text(text.DescriptionHeading, 15, bold: true),
+                    () => text.AddressPlaceholder, () => text.FictionalAddress, "AddressEntry", 120),
+                Text(() => text.DescriptionHeading, 15, bold: true),
                 DescriptionEditor(text),
-                Ui.Text(text.DailyHours, 15, bold: true),
+                Text(() => text.DailyHours, 15, bold: true),
                 TimeFields(text),
-                Ui.Text(text.ScareLevel, 15, bold: true),
-                Ui.Picker(text.ScareLevel,
-                    Binding.Create(static (HostEditorViewModel model) => model.ScareOptions),
+                Text(() => text.ScareLevel, 15, bold: true),
+                Picker(() => text.ScareLevel, () => viewModel.ScareOptions,
                     Binding.Create(static (HostEditorViewModel model) => model.ScareIndex), "HouseScarePicker"),
-                Ui.Text(text.PorchStatus, 15, bold: true),
-                Ui.Picker(text.PorchStatus,
-                    Binding.Create(static (HostEditorViewModel model) => model.StatusOptions),
+                Text(() => text.PorchStatus, 15, bold: true),
+                Picker(() => text.PorchStatus, () => viewModel.StatusOptions,
                     Binding.Create(static (HostEditorViewModel model) => model.StatusIndex), "HouseStatusPicker"),
-                Ui.Toggle(text.QuietVisitsAvailable,
+                Toggle(() => text.QuietVisitsAvailable,
                     Binding.Create(static (HostEditorViewModel model) => model.QuietVisits), "QuietVisitsSwitch"),
-                Ui.Toggle(text.StepFreeAccess,
+                Toggle(() => text.StepFreeAccess,
                     Binding.Create(static (HostEditorViewModel model) => model.StepFreeAccess), "StepFreeSwitch"),
                 Ui.Errors(),
-                Ui.Button(text.SaveHouse, "SaveHouseButton", viewModel.SaveCommand),
-                Ui.Text(text.StorageNotice, 13, Ui.Muted)
+                Button(() => text.SaveHouse, "SaveHouseButton", viewModel.SaveCommand),
+                Text(() => text.StorageNotice, 13, Ui.Muted)
             }
         };
         Content = new ScrollView { Content = fields };
     }
 
-    private static Entry Entry(BindingBase binding, string placeholder, string description, string id, int maximumLength)
+    private Entry Entry(BindingBase binding, Func<string> placeholder, Func<string> description, string id, int maximumLength)
     {
         var entry = new Entry
         {
-            Placeholder = placeholder,
             AutomationId = id,
             MaxLength = maximumLength,
             TextColor = Ui.Cream,
@@ -65,15 +62,18 @@ public sealed class HostEditorPage : ContentPage
             ReturnType = ReturnType.Next
         };
         entry.SetBinding(Microsoft.Maui.Controls.Entry.TextProperty, binding);
-        SemanticProperties.SetDescription(entry, description);
+        Localize(() =>
+        {
+            entry.Placeholder = placeholder();
+            SemanticProperties.SetDescription(entry, description());
+        });
         return entry;
     }
 
-    private static Editor DescriptionEditor(AppTextLocalized text)
+    private Editor DescriptionEditor(AppTextLocalized text)
     {
         var editor = new Editor
         {
-            Placeholder = text.DescriptionPlaceholder,
             AutomationId = "DescriptionEditor",
             MaxLength = 500,
             AutoSize = EditorAutoSizeOption.TextChanges,
@@ -84,21 +84,30 @@ public sealed class HostEditorPage : ContentPage
             FontSize = 16
         };
         editor.SetBinding(Editor.TextProperty, static (HostEditorViewModel model) => model.Description);
-        SemanticProperties.SetDescription(editor, text.DescriptionAccessibility);
+        Localize(() =>
+        {
+            editor.Placeholder = text.DescriptionPlaceholder;
+            SemanticProperties.SetDescription(editor, text.DescriptionAccessibility);
+        });
         return editor;
     }
 
-    private static View TimeFields(AppTextLocalized text)
+    private View TimeFields(AppTextLocalized text)
     {
         var opens = new TimePicker { AutomationId = "OpeningTimePicker", TextColor = Ui.Cream, Format = "t" };
         opens.SetBinding(TimePicker.TimeProperty, static (HostEditorViewModel model) => model.OpensAt);
-        SemanticProperties.SetDescription(opens, text.OpeningTime);
         var closes = new TimePicker { AutomationId = "ClosingTimePicker", TextColor = Ui.Cream, Format = "t" };
         closes.SetBinding(TimePicker.TimeProperty, static (HostEditorViewModel model) => model.ClosesAt);
-        SemanticProperties.SetDescription(closes, text.ClosingTime);
+        Localize(() =>
+        {
+            SemanticProperties.SetDescription(opens, text.OpeningTime);
+            SemanticProperties.SetDescription(closes, text.ClosingTime);
+            opens.Handler?.UpdateValue(nameof(ITimePicker.Format));
+            closes.Handler?.UpdateValue(nameof(ITimePicker.Format));
+        });
         var grid = new Grid { ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star)], ColumnSpacing = 18 };
-        grid.Add(new VerticalStackLayout { Children = { Ui.Text(text.Opens, 13, Ui.Muted), opens } });
-        grid.Add(new VerticalStackLayout { Children = { Ui.Text(text.Closes, 13, Ui.Muted), closes } }, 1);
+        grid.Add(new VerticalStackLayout { Children = { Text(() => text.Opens, 13, Ui.Muted), opens } });
+        grid.Add(new VerticalStackLayout { Children = { Text(() => text.Closes, 13, Ui.Muted), closes } }, 1);
         return grid;
     }
 }
