@@ -3,6 +3,7 @@ using BooRoute.Core;
 #if !IOS && !MACCATALYST && !ANDROID && !WINDOWS
 using Avalonia.Controls.Maui;
 using Avalonia.Controls.Maui.Essentials;
+using Avalonia.Controls.Maui.SkiaSharp.Views;
 #endif
 
 #if DEBUG && (IOS || MACCATALYST || ANDROID || WINDOWS)
@@ -24,6 +25,7 @@ public static class MauiProgram
 #if !IOS && !MACCATALYST && !ANDROID && !WINDOWS
             .UseAvaloniaApp(useSingleViewLifetime: OperatingSystem.IsBrowser())
             .UseAvaloniaEssentials()
+            .UseAvaloniaSkiaSharp(forceSoftwareRendering: OperatingSystem.IsBrowser())
 #endif
             .ConfigureFonts(fonts =>
             {

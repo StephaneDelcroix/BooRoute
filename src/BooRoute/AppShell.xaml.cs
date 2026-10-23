@@ -35,10 +35,14 @@ public partial class AppShell : Shell
             tab.Items.Add(new ShellContent { Title = page.Title, Content = page });
             tabs.Items.Add(tab);
         }
-#if IOS || MACCATALYST || ANDROID
-        // .NET MAUI Maps has no Windows or Avalonia (desktop and browser) implementation.
+#if !WINDOWS
+        // .NET MAUI Maps has no Windows implementation. Desktop and browser (Avalonia) use Mapsui instead.
         mapViewModel = new MapViewModel(backend, clock, logging);
-        var mapPage = new MapPage(mapViewModel);
+#if IOS || MACCATALYST || ANDROID
+        ContentPage mapPage = new MapPage(mapViewModel);
+#else
+        ContentPage mapPage = new MapsuiMapPage(mapViewModel);
+#endif
         var mapTab = new Tab { Title = mapPage.Title, Route = "map", Icon = "tab_map.png" };
         mapTab.Items.Add(new ShellContent { Title = mapPage.Title, Content = mapPage });
         tabs.Items.Insert(1, mapTab);

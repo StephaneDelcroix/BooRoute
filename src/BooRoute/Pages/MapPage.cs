@@ -28,9 +28,20 @@ public sealed class MapPage : ContentPage
         };
         SemanticProperties.SetDescription(map, "Map of the demo neighborhood houses");
 
-        var summary = Ui.Bound(nameof(viewModel.Summary), 14, Ui.Muted);
+        var layout = new Grid { RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)] };
+        layout.Add(Header());
+        layout.Add(map, 0, 1);
+        Content = layout;
+
+        viewModel.HousesChanged += (_, _) => UpdatePins();
+    }
+
+    // Shared with MapsuiMapPage, which desktop and browser (Avalonia) use instead.
+    internal static View Header()
+    {
+        var summary = Ui.Bound(nameof(MapViewModel.Summary), 14, Ui.Muted);
         summary.AutomationId = "MapHouseCountLabel";
-        var header = new VerticalStackLayout
+        return new VerticalStackLayout
         {
             Spacing = 8,
             Margin = new Thickness(22, 12, 22, 10),
@@ -42,13 +53,6 @@ public sealed class MapPage : ContentPage
                 Ui.Errors()
             }
         };
-
-        var layout = new Grid { RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)] };
-        layout.Add(header);
-        layout.Add(map, 0, 1);
-        Content = layout;
-
-        viewModel.HousesChanged += (_, _) => UpdatePins();
     }
 
     private void UpdatePins()

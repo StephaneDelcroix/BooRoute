@@ -87,6 +87,9 @@
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == '' Or $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'browser'">
 		<PackageReference Include="Avalonia.Controls.Maui" Version="$(AvaloniaControlsMauiVersion)" />
 		<PackageReference Include="Avalonia.Controls.Maui.Essentials" Version="$(AvaloniaControlsMauiVersion)" />
+		<!-- .NET MAUI Maps has no Avalonia implementation, so these targets draw the map with Mapsui. -->
+		<PackageReference Include="Avalonia.Controls.Maui.SkiaSharp.Views" Version="$(AvaloniaControlsMauiVersion)" />
+		<PackageReference Include="Mapsui.Maui" Version="5.0.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
