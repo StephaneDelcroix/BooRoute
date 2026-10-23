@@ -14,6 +14,27 @@ public static class DemoMap
     // About 15 m, enough to tell two pins at the same entrance apart.
     public const double DuplicateOffsetDegrees = 0.00014;
 
+    private const double IdentityCenterLatitude = 52.5140;
+    private const double IdentityCenterLongitude = 13.3500;
+    private const double IdentityLatitudeSpread = 0.0036;
+    private const double IdentityLongitudeSpread = 0.0066;
+
+    /// <summary>
+    /// Returns a stable synthetic position based only on house identity.
+    /// The app's map continues to use geocoded addresses.
+    /// </summary>
+    public static (double Latitude, double Longitude) LocationFor(House house) => LocationFor(house.Id);
+
+    public static (double Latitude, double Longitude) LocationFor(Guid id)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        id.TryWriteBytes(bytes);
+        var x = BitConverter.ToUInt32(bytes[..4]) / (double)uint.MaxValue;
+        var y = BitConverter.ToUInt32(bytes[4..8]) / (double)uint.MaxValue;
+        return (IdentityCenterLatitude + (y * 2 - 1) * IdentityLatitudeSpread,
+                IdentityCenterLongitude + (x * 2 - 1) * IdentityLongitudeSpread);
+    }
+
     /// <summary>
     /// Nudges positions that share the same coordinates (for example two museums
     /// with one entrance address) into a small circle so every pin stays tappable.
