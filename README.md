@@ -1,5 +1,7 @@
 # 🎃 BooRoute
 
+[![CI](https://github.com/StephaneDelcroix/BooRoute/actions/workflows/ci.yml/badge.svg)](https://github.com/StephaneDelcroix/BooRoute/actions/workflows/ci.yml)
+
 A small .NET MAUI Halloween app built for a live GitHub Copilot demo.
 Find participating houses, choose your scare level, mark private visits, and
 switch to the demo-host experience to register a fictional house or change its status.
