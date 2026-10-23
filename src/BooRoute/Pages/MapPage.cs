@@ -28,7 +28,7 @@ public sealed class MapPage : ContentPage
         };
         SemanticProperties.SetDescription(map, "Map of the demo neighborhood houses");
 
-        var summary = Ui.Bound(nameof(viewModel.Summary), 14, Ui.Muted);
+        var summary = Ui.Bound(Binding.Create(static (MapViewModel model) => model.Summary), 14, Ui.Muted);
         summary.AutomationId = "MapHouseCountLabel";
         var header = new VerticalStackLayout
         {

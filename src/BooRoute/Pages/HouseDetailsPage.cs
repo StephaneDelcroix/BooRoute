@@ -16,7 +16,7 @@ public sealed class HouseDetailsPage : ContentPage
         var house = viewModel.House;
         var card = viewModel.Card;
         var visit = Ui.Button("", "ToggleVisitedButton", viewModel.ToggleVisitedCommand);
-        visit.SetBinding(Button.TextProperty, nameof(viewModel.VisitButtonText));
+        visit.SetBinding(Button.TextProperty, static (HouseDetailsViewModel model) => model.VisitButtonText);
         var status = Ui.Text(card.Status, 17, card.IsWelcoming ? Ui.Mint : Ui.Muted, true);
         status.AutomationId = "HouseStatusLabel";
         var name = Ui.Text(house.Nickname, 32, bold: true);

@@ -236,6 +236,11 @@ remain unverified.
 
 ## Structure
 
+The C# pages use typed expression bindings rather than string property paths.
+Shared UI helpers accept `BindingBase` instances created with `Binding.Create`
+at the call site so MAUI can generate the accessors. Editable fields, switches,
+and picker selections explicitly retain two-way bindings.
+
 - `src/BooRoute`: native MAUI pages, MVVM view models, and dependency injection.
 - `src/BooRoute.Core`: models, welcoming/filter rules, mock backend, and JSON persistence.
 - `tests/BooRoute.Core.Tests`: clock-controlled business-rule, persistence, and
