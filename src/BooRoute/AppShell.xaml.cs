@@ -18,7 +18,18 @@ public partial class AppShell : Shell
             var viewModel = new NeighborhoodViewModel(backend, clock, logging, mode);
             viewModels.Add(viewModel);
             var page = new NeighborhoodPage(viewModel);
-            var tab = new Tab { Title = page.Title, Route = mode.ToString().ToLowerInvariant() };
+            var tab = new Tab
+            {
+                Title = page.Title,
+                Route = mode.ToString().ToLowerInvariant(),
+                Icon = mode switch
+                {
+                    NeighborhoodMode.Explore => "tab_explore.png",
+                    NeighborhoodMode.Visited => "tab_visited.png",
+                    NeighborhoodMode.Host => "tab_host.png",
+                    _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown neighborhood mode.")
+                }
+            };
             tab.Items.Add(new ShellContent { Title = page.Title, Content = page });
             tabs.Items.Add(tab);
         }
