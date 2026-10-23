@@ -129,7 +129,7 @@ public sealed class NeighborhoodViewModel : ViewModelBase
         }));
         AddHouseCommand = new AsyncCommand(_ => RunAsync(() =>
             Shell.Current.Navigation.PushAsync(new HostEditorPage(new(backend, clock, logging)))));
-        backend.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(() => _ = RefreshAsync());
+        backend.Changed += (_, _) => Application.Current?.Dispatcher.Dispatch(() => _ = RefreshAsync());
     }
 
     public async Task RefreshAsync()

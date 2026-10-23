@@ -1,7 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using BooRoute.Core;
+#if !IOS && !MACCATALYST && !ANDROID && !WINDOWS
+using Avalonia.Controls.Maui;
+using Avalonia.Controls.Maui.Essentials;
+#endif
 
-#if DEBUG
+#if DEBUG && (IOS || MACCATALYST || ANDROID || WINDOWS)
 using Microsoft.Maui.DevFlow.Agent;
 #endif
 
@@ -14,6 +18,10 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+#if !IOS && !MACCATALYST && !ANDROID && !WINDOWS
+            .UseAvaloniaApp(useSingleViewLifetime: OperatingSystem.IsBrowser())
+            .UseAvaloniaEssentials()
+#endif
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -21,13 +29,17 @@ public static class MauiProgram
             });
 
         builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-        builder.Services.AddSingleton<IDemoStateStore>(_ =>
-            new JsonDemoStateStore(Path.Combine(FileSystem.AppDataDirectory, "neighborhood.json")));
+        // The browser's file system is in memory, so keep browser data in localStorage through Preferences.
+        builder.Services.AddSingleton<IDemoStateStore>(_ => OperatingSystem.IsBrowser()
+            ? new TextDemoStateStore(() => Preferences.Get("neighborhood", null), json => Preferences.Set("neighborhood", json))
+            : new JsonDemoStateStore(Path.Combine(FileSystem.AppDataDirectory, "neighborhood.json")));
         builder.Services.AddSingleton<INeighborhoodBackend, MockNeighborhoodBackend>();
         builder.Services.AddSingleton<AppShell>();
 
 #if DEBUG
         builder.Logging.AddDebug();
+#endif
+#if DEBUG && (IOS || MACCATALYST || ANDROID || WINDOWS)
         builder.AddMauiDevFlowAgent();
 #endif
 

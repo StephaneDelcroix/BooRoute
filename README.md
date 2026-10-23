@@ -1,4 +1,4 @@
-# 🎃 BooRoute
+﻿# 🎃 BooRoute
 
 A small .NET MAUI Halloween app built for a live GitHub Copilot demo.
 Find participating houses, choose your scare level, mark private visits, and
@@ -51,6 +51,31 @@ retaining a single window.
 `ValidateXcodeVersion` is set to `false` to allow the demo to build with Xcode 27.1
 while the installed iOS workload expects 27.0. This bypasses only the version check;
 the mismatched toolchain remains unsupported and other build errors may still occur.
+
+### Desktop and browser (Avalonia)
+
+The `net11.0` and `net11.0-browser` targets use
+[Avalonia.Controls.Maui](https://github.com/AvaloniaUI/Avalonia.Controls.Maui)
+to draw the same MAUI pages with Avalonia. The iOS, Android, Mac Catalyst and
+Windows targets stay native MAUI.
+
+For desktop (macOS, Linux or Windows):
+
+```sh
+dotnet run --project src/BooRoute/BooRoute.csproj -f net11.0
+```
+
+For the browser, install the `wasm-tools` workload, then run the browser head
+and open the `App url` that it prints:
+
+```sh
+dotnet run --project src/BooRoute.Browser/BooRoute.Browser.csproj
+```
+
+The desktop app saves `neighborhood.json` in the user's application data folder
+(for example, `~/Library/Application Support/BooRoute` on macOS). The browser
+build has no persistent file system, so it saves the same JSON in the
+browser's `localStorage`. To start over in the browser, clear the site data.
 
 ## MAUI DevFlow
 
@@ -170,7 +195,9 @@ remain unverified.
 
 ## Structure
 
-- `src/BooRoute`: native MAUI pages, MVVM view models, and dependency injection.
+- `src/BooRoute`: MAUI pages, MVVM view models, and dependency injection. The native targets
+  use platform controls; the desktop and browser targets use Avalonia.Controls.Maui.
+- `src/BooRoute.Browser`: the WebAssembly head that starts the browser build.
 - `src/BooRoute.Core`: models, welcoming/filter rules, mock backend, and JSON persistence.
 - `tests/BooRoute.Core.Tests`: clock-controlled business-rule, persistence, and
   portable entry-presentation/grid tests (linked from the app's actual source).
