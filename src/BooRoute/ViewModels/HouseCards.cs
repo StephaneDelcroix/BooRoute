@@ -7,7 +7,8 @@ namespace BooRoute.ViewModels;
 public sealed class HouseCard
 {
     public House House { get; }
-    public bool Visited { get; }
+    public bool IsCollected { get; }
+    public StampDesign Stamp { get; }
     public bool IsWelcoming { get; }
     public string Nickname => House.Nickname;
     public string Address => House.Address;
@@ -15,17 +16,18 @@ public sealed class HouseCard
     public string Hours { get; }
     public string Status { get; }
     public string Features { get; }
-    public string VisitStatus { get; }
+    public string PassportStatus { get; }
     public string EditDescription { get; }
     public string ViewDescription { get; }
     internal string CultureKey { get; }
 
-    public HouseCard(House house, bool visited, DateTimeOffset localNow, AppText? text = null)
+    public HouseCard(House house, bool collected, DateTimeOffset localNow, AppText? text = null)
     {
         text ??= AppText.Default;
         CultureKey = CurrentCultureKey;
         House = house;
-        Visited = visited;
+        IsCollected = collected;
+        Stamp = StampGenerator.Generate(house.Id);
         IsWelcoming = house.IsWelcoming(localNow);
         ScareArt = house.ScareLevel switch
         {
@@ -46,7 +48,7 @@ public sealed class HouseCard
             house.QuietVisits ? text.Strings.QuietVisits : null,
             house.StepFreeAccess ? text.Strings.StepFree : null
         }.Where(value => value is not null));
-        VisitStatus = visited ? text.Strings.Visited : "";
+        PassportStatus = collected ? text.Strings.PassportStampCollected : "";
         EditDescription = text.Strings.EditHouseDescriptionFormat(house.Nickname);
         ViewDescription = text.Strings.ViewHouseDescriptionFormat(house.Nickname);
     }
@@ -57,7 +59,7 @@ public sealed class HouseCard
 
 public sealed class HouseCardCollection : ObservableCollection<HouseCard>
 {
-    public void Update(IEnumerable<House> orderedHouses, IReadOnlySet<Guid> visited, DateTimeOffset localNow, AppText? text = null)
+    public void Update(IEnumerable<House> orderedHouses, IReadOnlySet<Guid> collected, DateTimeOffset localNow, AppText? text = null)
     {
         var cultureKey = HouseCard.CurrentCultureKey;
         var houses = orderedHouses.ToArray();
@@ -73,13 +75,13 @@ public sealed class HouseCardCollection : ObservableCollection<HouseCard>
         for (var index = 0; index < houses.Length; index++)
         {
             var house = houses[index];
-            var isVisited = visited.Contains(house.Id);
+            var isCollected = collected.Contains(house.Id);
             existing.TryGetValue(house.Id, out var previous);
             var card = previous is not null && previous.House == house &&
-                       previous.Visited == isVisited && previous.IsWelcoming == house.IsWelcoming(localNow) &&
+                       previous.IsCollected == isCollected && previous.IsWelcoming == house.IsWelcoming(localNow) &&
                        previous.CultureKey == cultureKey
                 ? previous
-                : new HouseCard(house, isVisited, localNow, text);
+                : new HouseCard(house, isCollected, localNow, text);
 
             if (previous is null)
             {

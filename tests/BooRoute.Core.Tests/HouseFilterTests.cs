@@ -34,13 +34,13 @@ public sealed class HouseFilterTests
     }
 
     [Fact]
-    public void VisitedOnlyIncludesMatchingHousesInInputOrderAndIgnoresAbsentIds()
+    public void CollectedOnlyIncludesMatchingHousesInInputOrderAndIgnoresAbsentIds()
     {
         var houses = Houses();
-        var visited = new HashSet<Guid> { houses[4].Id, HouseId(99), houses[1].Id };
+        var collected = new HashSet<Guid> { houses[4].Id, HouseId(99), houses[1].Id };
 
         Assert.Equal(new[] { houses[1], houses[4] },
-            HouseFilters.Apply(houses, Now, visitedOnly: visited));
+            HouseFilters.Apply(houses, Now, collectedOnly: collected));
         Assert.Equal(houses, HouseFilters.Apply(houses, Now));
     }
 

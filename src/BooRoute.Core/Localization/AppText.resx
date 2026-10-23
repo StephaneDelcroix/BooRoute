@@ -92,7 +92,7 @@
   <data name="Locale" xml:space="preserve"><value>Language and region</value></data>
   <data name="SystemLocale" xml:space="preserve"><value>Use device settings</value></data>
   <data name="ApplyLocale" xml:space="preserve"><value>Apply language and region</value></data>
-  <data name="LocaleNotice" xml:space="preserve"><value>Applies immediately and is saved on this device. Save edits first: open forms will close. House names, addresses, descriptions and private visits are not changed.</value></data>
+  <data name="LocaleNotice" xml:space="preserve"><value>Applies immediately and is saved on this device. Save edits first: open forms will close. House names, addresses, descriptions and passport stamps are not changed.</value></data>
   <data name="LocalePreview" xml:space="preserve"><value>Time format: {0}</value></data>
   <data name="Map" xml:space="preserve"><value>Map</value></data>
   <data name="MapHeading" xml:space="preserve"><value>The demo neighbourhood</value></data>
@@ -128,4 +128,47 @@
   <data name="DemoDescription7" xml:space="preserve"><value>Bats, shadows, and a spooky soundtrack. This stop is best for families who enjoy a fright.</value></data>
   <data name="DemoDescription8" xml:space="preserve"><value>Bright paper decorations and friendly skeletons. Stop by for a festive neighbourhood hello.</value></data>
   <data name="DemoDescription9" xml:space="preserve"><value>The pumpkin patch has gone to sleep for the evening. Enjoy the decorations from the path.</value></data>
+  <data name="Passport" xml:space="preserve"><value>Passport</value></data>
+  <data name="PassportHeading" xml:space="preserve"><value>Halloween Passport</value></data>
+  <data name="CollectStamp" xml:space="preserve"><value>Collect passport stamp</value></data>
+  <data name="StampCollected" xml:space="preserve"><value>✓ Stamp collected</value></data>
+  <data name="PassportStampCollected" xml:space="preserve"><value>Passport stamp collected</value></data>
+  <data name="RemoveStamp" xml:space="preserve"><value>Remove from passport</value></data>
+  <data name="YourStamp" xml:space="preserve"><value>Your passport stamp</value></data>
+  <data name="PassportPrivacy" xml:space="preserve"><value>Your passport and collection times stay on this device. No accounts. No tracking or sharing.</value></data>
+  <data name="HouseStampDetails" xml:space="preserve"><value>House &amp; stamp details</value></data>
+  <data name="PassportFirstStamp" xml:space="preserve"><value>Collect your first passport stamp</value></data>
+  <data name="PassportProgress" xml:space="preserve"><value>{0} of {1} passport stamps collected</value></data>
+  <data name="PreviouslyCollected" xml:space="preserve"><value>Previously collected</value></data>
+  <data name="CollectedAt" xml:space="preserve"><value>Collected {0}</value></data>
+  <data name="SelectStamp" xml:space="preserve"><value>Select a stamp first.</value></data>
+  <data name="Achievements" xml:space="preserve"><value>Achievements</value></data>
+  <data name="Unlocked" xml:space="preserve"><value>Unlocked</value></data>
+  <data name="Locked" xml:space="preserve"><value>Locked · Keep exploring</value></data>
+  <data name="FirstKnock" xml:space="preserve"><value>First Knock</value></data>
+  <data name="FirstKnockDescription" xml:space="preserve"><value>Collect your first passport stamp.</value></data>
+  <data name="SpookyExplorer" xml:space="preserve"><value>Spooky Explorer</value></data>
+  <data name="SpookyExplorerDescription" xml:space="preserve"><value>Collect Friendly, Spooky, and Scary houses.</value></data>
+  <data name="QuietNight" xml:space="preserve"><value>Quiet Night</value></data>
+  <data name="QuietNightDescription" xml:space="preserve"><value>Collect two houses offering quiet visits.</value></data>
+  <data name="RefreshPassport" xml:space="preserve"><value>Refresh passport</value></data>
+  <data name="CollectedStamps" xml:space="preserve"><value>Collected stamps</value></data>
+  <data name="PassportEmptyHeading" xml:space="preserve"><value>Your Halloween story starts with a knock.</value></data>
+  <data name="PassportEmptyDescription" xml:space="preserve"><value>Head to Explore, open a house, and choose “Collect passport stamp”. Your first keepsake will appear here.</value></data>
+  <data name="ViewHouse" xml:space="preserve"><value>View house</value></data>
+  <data name="ViewStampHouse" xml:space="preserve"><value>View stamp and house for {0}</value></data>
+  <data name="StampDescription" xml:space="preserve"><value>{0} · {1} · {2}</value></data>
+  <data name="StampPumpkin" xml:space="preserve"><value>Pumpkin</value></data>
+  <data name="StampGhost" xml:space="preserve"><value>Ghost</value></data>
+  <data name="StampBat" xml:space="preserve"><value>Bat</value></data>
+  <data name="StampCat" xml:space="preserve"><value>Cat</value></data>
+  <data name="StampMoon" xml:space="preserve"><value>Moon</value></data>
+  <data name="StampSpider" xml:space="preserve"><value>Spider</value></data>
+  <data name="StampPumpkinPalette" xml:space="preserve"><value>Pumpkin orange</value></data>
+  <data name="StampLavender" xml:space="preserve"><value>Lavender</value></data>
+  <data name="StampMint" xml:space="preserve"><value>Mint</value></data>
+  <data name="StampRose" xml:space="preserve"><value>Rose</value></data>
+  <data name="StampStars" xml:space="preserve"><value>Stars</value></data>
+  <data name="StampSparkles" xml:space="preserve"><value>Sparkles</value></data>
+  <data name="StampDots" xml:space="preserve"><value>Dots</value></data>
 </root>

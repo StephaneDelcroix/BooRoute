@@ -52,7 +52,7 @@ public sealed class LocaleCallbackTests
             AppText.UseCultures(french, french);
             cards.Update([house], new HashSet<Guid> { house.Id }, now);
             Assert.NotSame(previous, Assert.Single(cards));
-            Assert.Equal("✓ Visité", cards[0].VisitStatus);
+            Assert.Equal("Timbre du passeport collectionné", cards[0].PassportStatus);
             Assert.Equal(house, cards[0].House);
         }
         finally

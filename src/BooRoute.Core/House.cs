@@ -62,10 +62,10 @@ public static class HouseFilters
         bool welcomingOnly = false,
         ScareLevel? scareLevel = null,
         bool quietOnly = false,
-        IReadOnlySet<Guid>? visitedOnly = null) =>
+        IReadOnlySet<Guid>? collectedOnly = null) =>
         houses.Where(house =>
             (!welcomingOnly || house.IsWelcoming(localNow)) &&
             (scareLevel is null || house.ScareLevel == scareLevel) &&
             (!quietOnly || house.QuietVisits) &&
-            (visitedOnly is null || visitedOnly.Contains(house.Id)));
+            (collectedOnly is null || collectedOnly.Contains(house.Id)));
 }

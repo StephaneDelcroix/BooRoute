@@ -35,8 +35,8 @@ public sealed class BackendInitializationRetryTests
         Assert.NotSame(failedSeed, saved);
         Assert.NotEmpty(snapshot.Houses);
         Assert.Equal(saved.Houses, snapshot.Houses);
-        Assert.True(snapshot.Visited.SetEquals(saved.Visited));
-        Assert.Empty(saved.Visited);
+        Assert.Equal(snapshot.Passport, saved.Passport);
+        Assert.Empty(saved.Passport);
         Assert.All(snapshot.Houses, house =>
         {
             Assert.Equal(new TimeOnly(17, 0), house.OpensAt);
@@ -49,7 +49,7 @@ public sealed class BackendInitializationRetryTests
         Assert.Equal(2, store.LoadAttempts);
         Assert.Equal(2, store.SaveAttempts);
         Assert.Equal(saved.Houses, cached.Houses);
-        Assert.True(cached.Visited.SetEquals(saved.Visited));
+        Assert.Equal(cached.Passport, saved.Passport);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

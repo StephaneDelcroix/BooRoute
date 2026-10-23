@@ -5,7 +5,7 @@ public sealed class VisitWriteFailureTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task FailedVisitWritePreservesStateAndRetryPublishesOnlySavedChange(bool visited)
+    public async Task FailedStampWritePreservesStateAndRetryPublishesOnlySavedChange(bool collected)
     {
         var house = new House(Guid.Parse("11111111-1111-1111-1111-111111111111"),
             "Pumpkin Porch", "13 Make-Believe Lane", "Friendly pumpkins.",
@@ -18,39 +18,43 @@ public sealed class VisitWriteFailureTests
         };
         House[] houses = [house, other];
         var initialVisits = new HashSet<Guid> { other.Id };
-        if (!visited)
+        if (!collected)
             initialVisits.Add(house.Id);
-        var store = new MemoryStore(new(houses.ToList(), new(initialVisits)));
+        var initialPassport = initialVisits.Select(id => new PassportEntry(id, null)).ToList();
+        var store = new MemoryStore(new(houses.ToList(), initialPassport));
         var backend = new MockNeighborhoodBackend(store, TimeProvider.System);
         var before = await backend.GetSnapshotAsync();
         var events = 0;
         backend.Changed += (_, _) => events++;
-        var failure = new IOException("Simulated visit write failure.");
+        var failure = new IOException("Simulated stamp write failure.");
         store.WriteFailure = failure;
 
-        var reported = await Assert.ThrowsAsync<IOException>(() => backend.SetVisitedAsync(house.Id, visited));
+        var reported = await Assert.ThrowsAsync<IOException>(() => backend.SetStampCollectedAsync(house.Id, collected));
 
         Assert.Same(failure, reported);
         var afterFailure = await backend.GetSnapshotAsync();
         Assert.Equal(houses, afterFailure.Houses);
-        Assert.True(initialVisits.SetEquals(afterFailure.Visited));
+        Assert.Equal(initialPassport, afterFailure.Passport);
         Assert.Equal(houses, store.PersistedState.Houses);
-        Assert.True(initialVisits.SetEquals(store.PersistedState.Visited));
+        Assert.Equal(initialPassport, store.PersistedState.Passport);
         Assert.Equal(0, events);
 
         store.WriteFailure = null;
-        await backend.SetVisitedAsync(house.Id, visited);
+        await backend.SetStampCollectedAsync(house.Id, collected);
 
         var expectedVisits = new HashSet<Guid> { other.Id };
-        if (visited)
+        if (collected)
             expectedVisits.Add(house.Id);
         var afterRetry = await backend.GetSnapshotAsync();
         Assert.Equal(houses, afterRetry.Houses);
-        Assert.True(expectedVisits.SetEquals(afterRetry.Visited));
+        Assert.True(expectedVisits.SetEquals(afterRetry.Passport.Select(entry => entry.HouseId)));
+        Assert.Equal(new PassportEntry(other.Id, null), afterRetry.Passport.Single(entry => entry.HouseId == other.Id));
+        if (collected)
+            Assert.NotNull(afterRetry.Passport.Single(entry => entry.HouseId == house.Id).CollectedAt);
         Assert.Equal(houses, store.PersistedState.Houses);
-        Assert.True(expectedVisits.SetEquals(store.PersistedState.Visited));
+        Assert.Equal(afterRetry.Passport, store.PersistedState.Passport);
         Assert.Equal(houses, before.Houses);
-        Assert.True(initialVisits.SetEquals(before.Visited));
+        Assert.Equal(initialPassport, before.Passport);
         Assert.Equal(1, events);
     }
 
@@ -60,13 +64,13 @@ public sealed class VisitWriteFailureTests
         public IOException? WriteFailure { get; set; }
 
         public Task<DemoState?> LoadAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult<DemoState?>(new(PersistedState.Houses.ToList(), new(PersistedState.Visited)));
+            Task.FromResult<DemoState?>(new(PersistedState.Houses.ToList(), new(PersistedState.Passport)));
 
         public Task SaveAsync(DemoState state, CancellationToken cancellationToken = default)
         {
             if (WriteFailure is { } failure)
                 throw failure;
-            PersistedState = new(state.Houses.ToList(), new(state.Visited));
+            PersistedState = new(state.Houses.ToList(), new(state.Passport));
             return Task.CompletedTask;
         }
     }

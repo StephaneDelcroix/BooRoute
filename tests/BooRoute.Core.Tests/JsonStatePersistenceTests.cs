@@ -7,10 +7,10 @@ public sealed class JsonStatePersistenceTests
     [InlineData(ScareLevel.Spooky, HouseStatus.OutOfTreats, false, true)]
     [InlineData(ScareLevel.Scary, HouseStatus.Closed, true, true)]
     [InlineData(ScareLevel.Friendly, HouseStatus.Closed, false, false)]
-    public async Task SaveThenLoadPreservesHouseFieldsAndVisits(
+    public async Task SaveThenLoadPreservesHouseFieldsAndStamps(
         ScareLevel scareLevel, HouseStatus status, bool quietVisits, bool stepFreeAccess)
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-test-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-test-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "state.json");
         try
         {
@@ -22,7 +22,7 @@ public sealed class JsonStatePersistenceTests
                 new TimeOnly(21, 34, 56).Add(TimeSpan.FromTicks(7654321)),
                 scareLevel, status, quietVisits, stepFreeAccess);
             var unvisitedHouse = house with { Id = Guid.NewGuid(), Nickname = "Ghost Garden" };
-            var state = new DemoState([house, unvisitedHouse], [house.Id]);
+            var state = new DemoState([house, unvisitedHouse], [new(house.Id, null)]);
 
             await store.SaveAsync(state);
 
@@ -31,8 +31,8 @@ public sealed class JsonStatePersistenceTests
             var loaded = await new JsonDemoStateStore(path).LoadAsync();
             Assert.NotNull(loaded);
             Assert.Equal(state.Houses, loaded.Houses);
-            Assert.True(state.Visited.SetEquals(loaded.Visited));
-            Assert.DoesNotContain(unvisitedHouse.Id, loaded.Visited);
+            Assert.Equal(state.Passport, loaded.Passport);
+            Assert.DoesNotContain(loaded.Passport, entry => entry.HouseId == unvisitedHouse.Id);
         }
         finally
         {
@@ -44,9 +44,9 @@ public sealed class JsonStatePersistenceTests
     }
 
     [Fact]
-    public async Task LaterSaveReplacesHousesAndVisits()
+    public async Task LaterSaveReplacesHousesAndStamps()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-test-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-test-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "state.json");
         try
         {
@@ -61,17 +61,17 @@ public sealed class JsonStatePersistenceTests
                 Nickname = "A much longer nickname for the house that will be removed"
             };
             await store.SaveAsync(new DemoState(
-                [retainedHouse, removedHouse], [retainedHouse.Id, removedHouse.Id]));
+                [retainedHouse, removedHouse], [new(retainedHouse.Id, null), new(removedHouse.Id, null)]));
             Assert.False(File.Exists(path + ".tmp"));
 
             var initial = await new JsonDemoStateStore(path).LoadAsync();
             Assert.NotNull(initial);
             Assert.Equal(new[] { retainedHouse, removedHouse }, initial.Houses);
-            Assert.True(initial.Visited.SetEquals([retainedHouse.Id, removedHouse.Id]));
+            Assert.Equal([retainedHouse.Id, removedHouse.Id], initial.Passport.Select(entry => entry.HouseId));
 
             var updatedHouse = retainedHouse with { Nickname = "Updated porch", QuietVisits = false };
             var addedHouse = retainedHouse with { Id = Guid.NewGuid(), Nickname = "New porch" };
-            var replacement = new DemoState([updatedHouse, addedHouse], [addedHouse.Id]);
+            var replacement = new DemoState([updatedHouse, addedHouse], [new(addedHouse.Id, null)]);
 
             await store.SaveAsync(replacement);
 
@@ -79,10 +79,10 @@ public sealed class JsonStatePersistenceTests
             var loaded = await new JsonDemoStateStore(path).LoadAsync();
             Assert.NotNull(loaded);
             Assert.Equal(replacement.Houses, loaded.Houses);
-            Assert.Equal(addedHouse.Id, Assert.Single(loaded.Visited));
+            Assert.Equal(addedHouse.Id, Assert.Single(loaded.Passport).HouseId);
             Assert.DoesNotContain(loaded.Houses, house => house.Id == removedHouse.Id);
-            Assert.DoesNotContain(retainedHouse.Id, loaded.Visited);
-            Assert.DoesNotContain(removedHouse.Id, loaded.Visited);
+            Assert.DoesNotContain(loaded.Passport, entry => entry.HouseId == retainedHouse.Id);
+            Assert.DoesNotContain(loaded.Passport, entry => entry.HouseId == removedHouse.Id);
         }
         finally
         {
@@ -96,7 +96,7 @@ public sealed class JsonStatePersistenceTests
     [Fact]
     public async Task MissingFileLoadsAsNullWithoutCreatingDataFile()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"booroute-test-{Guid.NewGuid():N}");
+        var directory = Path.Combine(Directory.GetCurrentDirectory(), $"booroute-test-{Guid.NewGuid():N}");
         var path = Path.Combine(directory, "state.json");
         try
         {

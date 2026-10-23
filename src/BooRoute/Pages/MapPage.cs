@@ -61,7 +61,7 @@ public sealed class MapPage : ContentPage
             var pin = new Pin
             {
                 Label = $"{card.Nickname} · {viewModel.Text.ScareName(card.House.ScareLevel)}",
-                Address = string.IsNullOrEmpty(card.VisitStatus) ? card.Status : $"{card.Status} · {card.VisitStatus}",
+                Address = string.IsNullOrEmpty(card.PassportStatus) ? card.Status : $"{card.Status} · {card.PassportStatus}",
                 Location = new Location(latitude, longitude),
                 Type = PinType.Place
             };

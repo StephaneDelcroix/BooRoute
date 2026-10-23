@@ -22,25 +22,21 @@ public sealed class NeighborhoodPage : ContentPage
         Title = viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.DemoHost,
-            NeighborhoodMode.Visited => text.MyVisits,
             _ => text.Explore
         };
         var heading = viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.HostHeading,
-            NeighborhoodMode.Visited => text.VisitsHeading,
             _ => "BooRoute"
         };
         var headingArt = viewModel.Mode switch
         {
             NeighborhoodMode.Host => "heading_host.png",
-            NeighborhoodMode.Visited => "heading_visits.png",
             _ => "heading_explore.png"
         };
         var subtitle = viewModel.Mode switch
         {
             NeighborhoodMode.Host => text.HostSubtitle,
-            NeighborhoodMode.Visited => text.VisitsSubtitle,
             _ => text.ExploreSubtitle
         };
         var header = new VerticalStackLayout
@@ -87,9 +83,7 @@ public sealed class NeighborhoodPage : ContentPage
                 Children =
                 {
                     Ui.Text(text.EmptyHeading, 24, bold: true),
-                    Ui.Text(viewModel.Mode == NeighborhoodMode.Visited
-                        ? text.EmptyVisits
-                        : text.EmptyHouses, 16, Ui.Muted)
+                    Ui.Text(text.EmptyHouses, 16, Ui.Muted)
                 }
             },
             ItemTemplate = new DataTemplate(() => BuildHouseCard(viewModel))
@@ -122,7 +116,7 @@ public sealed class NeighborhoodPage : ContentPage
         art.SetBinding(Image.SourceProperty, static (HouseCard card) => card.ScareArt, converter: ArtConverter);
         top.Add(art, 1);
         var button = Ui.Button(viewModel.Mode == NeighborhoodMode.Host
-                ? viewModel.Text.Strings.EditHouse : viewModel.Text.Strings.VisitDetails,
+                ? viewModel.Text.Strings.EditHouse : viewModel.Text.Strings.HouseStampDetails,
             "OpenHouseButton", viewModel.OpenHouseCommand, secondary: true);
         button.BackgroundColor = Color.FromArgb("#3A2B4F");
         button.SetBinding(Button.CommandParameterProperty, static (HouseCard card) => card);
@@ -136,14 +130,23 @@ public sealed class NeighborhoodPage : ContentPage
         hours.SetBinding(Label.TextProperty, static (HouseCard card) => card.Hours);
         var features = Ui.Text(size: 13, color: Ui.Muted);
         features.SetBinding(Label.TextProperty, static (HouseCard card) => card.Features);
-        var visitStatus = Ui.Text(size: 14, color: Ui.Mint);
-        visitStatus.SetBinding(Label.TextProperty, static (HouseCard card) => card.VisitStatus);
+        var stamp = Ui.Stamp(compact: true);
+        stamp.SetBinding(BindingContextProperty, static (HouseCard card) => card.Stamp,
+            converter: new StampPresentationConverter(viewModel.Text));
+        var passport = new Grid
+        {
+            ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
+            ColumnSpacing = 12
+        };
+        passport.Add(stamp);
+        passport.Add(Ui.Bound(Binding.Create(static (HouseCard card) => card.PassportStatus), 14, Ui.Mint), 1);
+        passport.SetBinding(IsVisibleProperty, static (HouseCard card) => card.IsCollected);
         var content = new VerticalStackLayout
         {
             Spacing = 9,
             Children =
             {
-                top, address, status, hours, features, visitStatus, button
+                top, address, status, hours, features, passport, button
             }
         };
         var card = Ui.Card(content);
@@ -164,6 +167,15 @@ public sealed class NeighborhoodPage : ContentPage
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
             value is string file ? ImageSource.FromFile(file) : null;
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+            throw new NotSupportedException();
+    }
+
+    private sealed class StampPresentationConverter(BooRoute.Core.Localization.AppText text) : IValueConverter
+    {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+            value is BooRoute.Core.StampDesign design ? new StampPresentation(design, text) : null;
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
             throw new NotSupportedException();

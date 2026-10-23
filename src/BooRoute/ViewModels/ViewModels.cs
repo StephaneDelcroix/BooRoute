@@ -62,7 +62,7 @@ public abstract class ViewModelBase(ILoggerFactory logging, AppText text) : INot
         {
             await action();
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or
                                       JsonException or ArgumentException or InvalidOperationException)
         {
             logging.CreateLogger(GetType()).LogError(error, "BooRoute action failed");
@@ -80,7 +80,26 @@ public abstract class ViewModelBase(ILoggerFactory logging, AppText text) : INot
     }
 }
 
-public enum NeighborhoodMode { Explore, Visited, Host }
+public sealed class StampPresentation(StampDesign design, AppText text)
+{
+    public string Symbol => design.Symbol switch
+    {
+        StampSymbol.Pumpkin => "🎃", StampSymbol.Ghost => "👻", StampSymbol.Bat => "🦇",
+        StampSymbol.Cat => "🐈‍⬛", StampSymbol.Moon => "🌙", _ => "🕷️"
+    };
+    public string Accent => design.Accent switch
+    {
+        StampAccent.Stars => "★  ★  ★", StampAccent.Sparkles => "✦  ✧  ✦", _ => "•  •  •"
+    };
+    public Color Color => design.Palette switch
+    {
+        StampPalette.Pumpkin => Ui.Orange, StampPalette.Lavender => Color.FromArgb("#D6BAFF"),
+        StampPalette.Mint => Ui.Mint, _ => Color.FromArgb("#FFBDD3")
+    };
+    public string Description => text.StampDescription(design);
+}
+
+public enum NeighborhoodMode { Explore, Host }
 
 public sealed class NeighborhoodViewModel : ViewModelBase
 {
@@ -167,44 +186,63 @@ public sealed class NeighborhoodViewModel : ViewModelBase
         var filtered = HouseFilters.Apply(snapshot.Houses, now,
             Mode == NeighborhoodMode.Explore && WelcomingOnly,
             Mode == NeighborhoodMode.Explore ? scare : null,
-            Mode == NeighborhoodMode.Explore && QuietOnly,
-            Mode == NeighborhoodMode.Visited ? snapshot.Visited : null);
+            Mode == NeighborhoodMode.Explore && QuietOnly);
         Houses.Update(filtered.OrderByDescending(house => house.IsWelcoming(now)).ThenBy(house => house.Nickname),
-            snapshot.Visited, now, Text);
+            snapshot.Passport.Select(entry => entry.HouseId).ToHashSet(), now, Text);
         Summary = Text.Summary(Houses.Count, Houses.Count(card => card.IsWelcoming));
     }
 }
 
 public sealed class HouseDetailsViewModel : ViewModelBase
 {
-    private bool visited;
+    private bool collected;
     public House House { get; }
     public HouseCard Card { get; }
-    public string VisitButtonText => visited ? Text.Strings.UndoVisited : Text.Strings.MarkVisited;
-    public ICommand ToggleVisitedCommand { get; }
-    public event EventHandler? VisitMarked;
+    public bool IsCollected => collected;
+    public bool CanCollect => !collected && !IsBusy;
+    public string StampButtonText => collected ? Text.Strings.StampCollected : Text.Strings.CollectStamp;
+    public ICommand CollectStampCommand { get; }
+    public ICommand RemoveStampCommand { get; }
+    public event EventHandler? StampCollected;
 
     public HouseDetailsViewModel(INeighborhoodBackend backend, TimeProvider clock,
         ILoggerFactory logging, AppText text, House house) : base(logging, text)
     {
         House = house;
         Card = new(house, false, clock.GetLocalNow(), Text);
-        ToggleVisitedCommand = new AsyncCommand(_ => RunAsync(async () =>
+        CollectStampCommand = new AsyncCommand(_ => RunAsync(async () =>
         {
-            await backend.SetVisitedAsync(House.Id, !visited);
-            visited = !visited;
-            Changed(nameof(VisitButtonText));
-            if (visited)
-                VisitMarked?.Invoke(this, EventArgs.Empty);
+            if (collected)
+                return;
+            await backend.SetStampCollectedAsync(House.Id, true);
+            SetCollected(true);
+            StampCollected?.Invoke(this, EventArgs.Empty);
         }));
+        RemoveStampCommand = new AsyncCommand(_ => RunAsync(async () =>
+        {
+            await backend.SetStampCollectedAsync(House.Id, false);
+            SetCollected(false);
+        }));
+        PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(IsBusy))
+                Changed(nameof(CanCollect));
+        };
         Backend = backend;
+    }
+
+    private void SetCollected(bool value)
+    {
+        collected = value;
+        Changed(nameof(IsCollected));
+        Changed(nameof(CanCollect));
+        Changed(nameof(StampButtonText));
     }
 
     private INeighborhoodBackend Backend { get; }
     public Task LoadAsync() => RunAsync(async () =>
     {
-        visited = (await Backend.GetSnapshotAsync()).Visited.Contains(House.Id);
-        Changed(nameof(VisitButtonText));
+        SetCollected((await Backend.GetSnapshotAsync()).Passport.Any(entry => entry.HouseId == House.Id));
     });
 }
 
@@ -324,9 +362,10 @@ public sealed class MapViewModel : ViewModelBase
     {
         var snapshot = await backend.GetSnapshotAsync();
         var now = clock.GetLocalNow();
+        var collected = snapshot.Passport.Select(entry => entry.HouseId).ToHashSet();
         var cards = snapshot.Houses
             .OrderBy(house => house.Nickname)
-            .Select(house => new HouseCard(house, snapshot.Visited.Contains(house.Id), now, Text))
+            .Select(house => new HouseCard(house, collected.Contains(house.Id), now, Text))
             .ToList();
 
         var located = new List<(HouseCard Card, (double Latitude, double Longitude) Position)>();

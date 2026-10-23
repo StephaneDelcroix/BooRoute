@@ -87,10 +87,23 @@ public static class Ui
     {
         var errors = Bound(Binding.Create(static (ViewModelBase model) => model.ErrorMessage), 14, Orange);
         errors.AutomationId = "ErrorMessage";
-        var spinner = new ActivityIndicator { Color = Orange, HeightRequest = 24 };
+        var spinner = new ActivityIndicator { AutomationId = "LoadingIndicator", Color = Orange, HeightRequest = 24 };
         spinner.SetBinding(ActivityIndicator.IsRunningProperty, static (ViewModelBase model) => model.IsBusy);
         spinner.SetBinding(VisualElement.IsVisibleProperty, static (ViewModelBase model) => model.IsBusy);
         return new VerticalStackLayout { Spacing = 4, Children = { errors, spinner } };
+    }
+
+    public static Border Stamp(bool compact = false)
+    {
+        var symbol = Bound(Binding.Create(static (StampPresentation stamp) => stamp.Symbol), compact ? 28 : 40);
+        symbol.HorizontalTextAlignment = TextAlignment.Center;
+        var accent = Bound(Binding.Create(static (StampPresentation stamp) => stamp.Accent), compact ? 12 : 15, Midnight, true);
+        accent.HorizontalTextAlignment = TextAlignment.Center;
+        var stamp = Card(new VerticalStackLayout { Spacing = 2, Children = { symbol, accent } },
+            new Thickness(compact ? 8 : 12));
+        stamp.SetBinding(VisualElement.BackgroundColorProperty, static (StampPresentation stamp) => stamp.Color);
+        stamp.SetBinding(SemanticProperties.DescriptionProperty, static (StampPresentation stamp) => stamp.Description);
+        return stamp;
     }
 
     public static View DemoBanner(string? text = null) =>

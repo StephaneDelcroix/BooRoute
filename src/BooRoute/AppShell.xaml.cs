@@ -15,6 +15,7 @@ public partial class AppShell : Shell
     private readonly AppText text;
     private readonly ILoggerFactory logging;
     private MapPage? mapPage;
+    private readonly PassportViewModel passport;
 
     public AppShell(INeighborhoodBackend backend, TimeProvider clock, ILoggerFactory logging, AppText text, LocaleSettings localeSettings)
     {
@@ -22,6 +23,7 @@ public partial class AppShell : Shell
         this.localeSettings = localeSettings;
         this.text = text;
         this.logging = logging;
+        passport = new(backend, clock, logging, text);
         foreach (var mode in Enum.GetValues<NeighborhoodMode>())
             viewModels.Add(new NeighborhoodViewModel(backend, clock, logging, text, mode));
 #if !WINDOWS
@@ -46,7 +48,6 @@ public partial class AppShell : Shell
             var icon = viewModel.Mode switch
             {
                 NeighborhoodMode.Explore => "tab_explore.png",
-                NeighborhoodMode.Visited => "tab_visited.png",
                 NeighborhoodMode.Host => "tab_host.png",
                 _ => throw new ArgumentOutOfRangeException(nameof(viewModel.Mode), viewModel.Mode, "Unknown neighborhood mode.")
             };
@@ -58,6 +59,13 @@ public partial class AppShell : Shell
             };
             tab.Items.Add(new ShellContent { Title = page.Title, Content = page });
             tabs.Items.Add(tab);
+            if (viewModel.Mode == NeighborhoodMode.Explore)
+            {
+                var passportPage = new PassportPage(passport);
+                var passportTab = new Tab { Title = passportPage.Title, Route = "passport", Icon = "tab_visited.png" };
+                passportTab.Items.Add(new ShellContent { Title = passportPage.Title, Content = passportPage });
+                tabs.Items.Add(passportTab);
+            }
         }
 #if !WINDOWS
         mapPage = new MapPage(mapViewModel!);
@@ -84,5 +92,6 @@ public partial class AppShell : Shell
             await viewModel.RefreshAsync();
         if (mapViewModel is not null)
             await mapViewModel.RefreshAsync();
+        await passport.RefreshAsync();
     }
 }

@@ -14,7 +14,7 @@ public sealed class HouseCardVisitRefreshTests
     [InlineData(0, true)]
     [InlineData(1, true)]
     [InlineData(2, true)]
-    public void ChangingOneVisitReplacesOnlyThatCardAtTheSameIndex(int affectedIndex, bool wasVisited)
+    public void ChangingOneStampReplacesOnlyThatCardAtTheSameIndex(int affectedIndex, bool wasVisited)
     {
         var houses = CreateHouses();
         var visited = houses.Where((_, index) => index != affectedIndex && index % 2 == 0)
@@ -42,8 +42,9 @@ public sealed class HouseCardVisitRefreshTests
             else
                 Assert.Same(original[index], cards[index]);
             var expectedVisited = nextVisited.Contains(houses[index].Id);
-            Assert.Equal(expectedVisited, cards[index].Visited);
-            Assert.Equal(expectedVisited ? "\u2713 Visited" : "", cards[index].VisitStatus);
+            Assert.Equal(expectedVisited, cards[index].IsCollected);
+            Assert.Equal(expectedVisited ? "Passport stamp collected" : "", cards[index].PassportStatus);
+            Assert.Equal(original[index].Stamp, cards[index].Stamp);
         }
         var notification = Assert.Single(notifications);
         Assert.Equal(NotifyCollectionChangedAction.Replace, notification.Action);
@@ -81,8 +82,8 @@ public sealed class HouseCardVisitRefreshTests
         for (var index = 0; index < houses.Length; index++)
         {
             Assert.Same(original[index], cards[index]);
-            Assert.False(cards[index].Visited);
-            Assert.Empty(cards[index].VisitStatus);
+            Assert.False(cards[index].IsCollected);
+            Assert.Empty(cards[index].PassportStatus);
         }
         Assert.Empty(notifications);
     }
