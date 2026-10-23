@@ -10,11 +10,13 @@ public partial class AppShell : Shell
 {
     private readonly List<NeighborhoodViewModel> viewModels = [];
     private readonly List<NeighborhoodPage> neighborhoodPages = [];
-    private readonly MapViewModel? mapViewModel;
     private readonly LocaleSettings localeSettings;
     private readonly AppText text;
     private readonly ILoggerFactory logging;
+#if !WINDOWS
+    private readonly MapViewModel mapViewModel;
     private MapPage? mapPage;
+#endif
 
     public AppShell(INeighborhoodBackend backend, TimeProvider clock, ILoggerFactory logging, AppText text, LocaleSettings localeSettings)
     {
@@ -36,7 +38,9 @@ public partial class AppShell : Shell
         foreach (var oldPage in neighborhoodPages)
             oldPage.StopUpdates();
         neighborhoodPages.Clear();
+#if !WINDOWS
         mapPage?.StopUpdates();
+#endif
         Items.Clear();
         var tabs = new TabBar();
         foreach (var viewModel in viewModels)
@@ -60,7 +64,7 @@ public partial class AppShell : Shell
             tabs.Items.Add(tab);
         }
 #if !WINDOWS
-        mapPage = new MapPage(mapViewModel!);
+        mapPage = new MapPage(mapViewModel);
         var mapTab = new Tab { Title = mapPage.Title, Route = "map", Icon = "tab_map.png" };
         mapTab.Items.Add(new ShellContent { Title = mapPage.Title, Content = mapPage });
         tabs.Items.Insert(1, mapTab);
@@ -82,7 +86,8 @@ public partial class AppShell : Shell
     {
         foreach (var viewModel in viewModels)
             await viewModel.RefreshAsync();
-        if (mapViewModel is not null)
-            await mapViewModel.RefreshAsync();
+#if !WINDOWS
+        await mapViewModel.RefreshAsync();
+#endif
     }
 }
