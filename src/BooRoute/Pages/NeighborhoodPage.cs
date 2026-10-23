@@ -31,7 +31,7 @@ public sealed class NeighborhoodPage : ContentPage
         {
             NeighborhoodMode.Host => "Demo hosting only. No accounts or verified ownership.",
             NeighborhoodMode.Visited => "Your visits stay on this device. Nobody else sees them.",
-            _ => "Find the doors worth knocking on."
+            _ => "Explore demo stops around Microsoft Cologne."
         };
         var header = new VerticalStackLayout
         {

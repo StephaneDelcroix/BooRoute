@@ -1,4 +1,4 @@
-﻿# 🎃 BooRoute
+# 🎃 BooRoute
 
 A small .NET MAUI Halloween app built for a live GitHub Copilot demo.
 Find participating houses, choose your scare level, mark private visits, and
@@ -6,8 +6,12 @@ switch to the demo-host experience to register a fictional house or change its s
 
 **This is a local demo, not a public neighborhood service.** Both experiences
 share one asynchronous, in-app mock backend. There is no server, account verification,
-cloud synchronization, or tracking. All addresses are fictional. Do not enter real
-children's information or publish real home addresses.
+cloud synchronization, or tracking. The initial stops use real public venue
+addresses around Microsoft's Cologne office at Holzmarkt 2a. **These venues are
+not registered Halloween hosts.** All treats, statuses, welcoming hours, scare
+levels, quiet-visit flags and accessibility details are simulated; do not visit
+these places for treats. Do not enter real children's information or private
+home addresses.
 
 ## Run
 
@@ -31,7 +35,24 @@ xcrun simctl install booted src/BooRoute/bin/Debug/net11.0-ios/iossimulator-arm6
 xcrun simctl launch booted com.stephanedelcroix.booroute
 ```
 
-For Android, build with `-f net11.0-android`.
+For Android, deploy through the build target so fast-deployed managed assemblies
+are updated along with the APK, then cold-start the app:
+
+```sh
+dotnet build src/BooRoute/BooRoute.csproj -t:Run -f net11.0-android \
+  -p:AdbTarget="-s emulator-5554"
+adb -s emulator-5554 shell am force-stop com.stephanedelcroix.booroute
+adb -s emulator-5554 shell monkey -p com.stephanedelcroix.booroute 1
+```
+
+Replace `emulator-5554` with the serial from `adb devices`. Installing a Debug
+APK alone can leave older fast-deployed assemblies in use.
+
+The **Map** tab uses Google Maps on
+Android, so replace `YOUR_GOOGLE_MAPS_API_KEY` in
+`src/BooRoute/Platforms/Android/AndroidManifest.xml` with your own key
+([setup guide](https://learn.microsoft.com/dotnet/maui/user-interface/controls/map)).
+iOS and Mac Catalyst use Apple Maps and need no key. The Map tab is not available on Windows.
 
 For Mac Catalyst on Apple Silicon:
 
@@ -77,6 +98,15 @@ The desktop app saves `neighborhood.json` in the user's application data folder
 build has no persistent file system, so it saves the same JSON in the
 browser's `localStorage`. To start over in the browser, clear the site data.
 
+## App artwork
+
+The app icon and native launch splash share the supplied MAUI DAY artwork in
+`src/BooRoute/Resources/Splash/maui_day.png`. The original opaque PNG is retained
+without cropping, recoloring, or changing its lettering. `MauiIcon` places it over
+a dark background, with an Android-only foreground scale of `0.6` to keep the wide
+lettering inside adaptive-icon masks. `MauiSplashScreen` resizes it proportionally
+to a 192-by-192 logical-pixel base size on the same dark background. There is no
+separate in-app image logo.
 ## MAUI DevFlow
 
 Debug builds include [MAUI DevFlow](https://github.com/dotnet/maui-labs/tree/main/src/DevFlow)
@@ -140,13 +170,22 @@ development builds and fictional demo data.
 ## Try the demo
 
 1. Browse **Explore**, turn on **Welcoming visitors now**, and try scare-level or quiet-visit filters.
-2. Open a house and mark it visited. Find it under **My visits**.
+2. Open a house and mark it visited for a short pumpkin-confetti celebration, then
+   find it under **My visits**. The pumpkins only fly after a successful save, not
+   when undoing a visit, and respect the device's reduced-motion setting.
 3. Switch to **Demo host**, edit that house, and change its status to **Out of treats**.
 4. Return to Explore: it no longer appears under welcoming-only filtering.
+5. Open **Map** to see every stop from the list as a pin at its address. Tap a pin's
+   callout to open its details. Addresses are looked up with the platform geocoder
+   (Apple Maps or Google), so the map needs a network connection; houses whose
+   address can't be found are left off the map and counted in the summary.
 5. Register another fictional house. Restart the app to see that houses and visits persist.
 
 Ten houses are seeded on first use. Their initial daily welcoming windows are
 relative to the first launch time, so the demo works during the day or across midnight.
+Existing saved neighborhoods, including older fictional addresses, are preserved;
+upgrading does not overwrite houses or visits. Use a fresh installation to see
+the Cologne seed.
 The closing boundary is exclusive. Status and time both determine availability.
 The foreground list refreshes every 30 seconds, on appearance, on resume, and
 after successful mock-backend changes.
@@ -155,6 +194,25 @@ Data is saved to `neighborhood.json` in the app's private data directory using
 atomic file replacement. Errors are displayed rather than replacing corrupt data
 with a fresh success-shaped dataset. To start over, uninstall and reinstall the
 app (this deletes its local demo data).
+
+### Cologne demo locations
+
+The public venues below provide recognizable geography for the live demo, not
+an actual trick-or-treat route. Address sources are linked for verification.
+Museum Schnütgen and the Rautenstrauch-Joest-Museum share an entrance address.
+
+| Public venue | Address in Köln | Source |
+|---|---|---|
+| Microsoft Cologne | Holzmarkt 2a, 50676 | [Microsoft](https://news.microsoft.com/de-de/standorte-directions/) |
+| art'otel Cologne | Holzmarkt 4, 50676 | [Hotel](https://artotel.com/en/hotels/cologne/central-cologne/contact/) |
+| Schokoladenmuseum | Am Schokoladenmuseum 1a, 50678 | [Museum](https://www.schokoladenmuseum.de/impressum/) |
+| Deutsches Sport & Olympia Museum | Im Zollhafen 1, 50678 | [Museum](https://sportmuseum.de/) |
+| Trinitatiskirche | Filzengraben 4, 50676 | [Venue](https://www.trinitatiskirche-koeln.de/service-kontakt/wegbeschreibung/) |
+| NH Köln Altstadt | Holzmarkt 47, 50676 | [Hotel](https://www.nh-hotels.com/en/hotel/nh-koeln-altstadt) |
+| Motel One Köln-Altstadt | Tel-Aviv-Straße 6, 50676 | [Hotel](https://www.motel-one.com/de/hotels/koeln/hotel-koeln-altstadt/) |
+| Wasserturm Hotel Cologne | Kaygasse 2, 50676 | [Hotel](https://www.wasserturm-hotel-cologne.com/en/contacts-location) |
+| Museum Schnütgen | Cäcilienstraße 29-33, 50667 | [Museum](https://www.museum-schnuetgen.de/) |
+| Rautenstrauch-Joest-Museum | Cäcilienstraße 29-33, 50667 | [City of Cologne](https://www.stadt-koeln.de/service/adressen/00142/index.html) |
 
 ## Adaptive entry collections
 

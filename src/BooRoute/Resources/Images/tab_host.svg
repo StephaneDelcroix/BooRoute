@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7"/>
-  </g>
+  <!-- Spooky house under a crescent moon: single color so the tab bar can tint it -->
+  <path fill="#FFF4DF" d="M4.41 2.43A2.4 2.4 0 1 0 7.06 5.61A2.1 2.1 0 0 1 4.41 2.43Z"/>
+  <path fill="#FFF4DF" fill-rule="evenodd" d="M5 21.5V12.6H3.2L12 4.2L15.8 7.83V5.2H17.8V9.74L20.8 12.6H19V21.5Z M10.6 9.4A1.4 1.4 0 1 0 13.4 9.4A1.4 1.4 0 1 0 10.6 9.4Z M6.6 16.6V14.6L7.7 13.4L8.8 14.6V16.6Z M15.2 16.6V14.6L16.3 13.4L17.4 14.6V16.6Z M10.4 21.5V17.6A1.6 1.6 0 0 1 13.6 17.6V21.5Z"/>
 </svg>

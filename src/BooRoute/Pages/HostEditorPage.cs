@@ -18,10 +18,10 @@ public sealed class HostEditorPage : ContentPage
             Children =
             {
                 Ui.Text("🏠 " + viewModel.Heading, 29, bold: true),
-                Ui.DemoBanner("DEMO HOST · Fictional addresses only · Not real registration"),
+                Ui.DemoBanner("DEMO HOST · Public venues or fictional addresses only · No private homes · Not real registration"),
                 Ui.Text("House nickname", 15, bold: true),
                 Entry("Nickname", "e.g. The Pumpkin Porch", "NicknameEntry", 60),
-                Ui.Text("Fictional address", 15, bold: true),
+                Ui.Text("Public venue or fictional address", 15, bold: true),
                 Entry("Address", "e.g. 13 Make-Believe Lane", "AddressEntry", 120),
                 Ui.Text("Tell families what to expect", 15, bold: true),
                 DescriptionEditor(),

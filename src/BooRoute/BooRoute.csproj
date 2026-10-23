@@ -49,10 +49,13 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#171125" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Splash\maui_day.png" Color="#080D20">
+			<!-- Keep the wide lettering inside Android's adaptive-icon safe zone. -->
+			<ForegroundScale Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">0.6</ForegroundScale>
+		</MauiIcon>
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#171125" BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\maui_day.png" Color="#080D20" BaseSize="192,192" Resize="true" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -67,6 +70,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.1.26425.128" />
 		<ProjectReference Include="..\BooRoute.Core\BooRoute.Core.csproj" />
 	</ItemGroup>

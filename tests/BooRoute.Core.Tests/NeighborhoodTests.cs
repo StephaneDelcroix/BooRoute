@@ -73,17 +73,52 @@ public sealed class NeighborhoodTests
     [InlineData(8)]
     [InlineData(16)]
     [InlineData(23)]
-    public void SeedAlwaysIncludesTenFictionalHousesAndWelcomingStops(int hour)
+    public void SeedAlwaysIncludesTenCologneVenuesAndWelcomingStops(int hour)
     {
         var state = DemoSeed.Create(At(hour));
         Assert.Equal(10, state.Houses.Count);
         Assert.Equal(7, state.Houses.Count(house => house.IsWelcoming(At(hour))));
         Assert.All(state.Houses, house =>
         {
-            Assert.Contains("Make-Believe", house.Address);
+            Assert.EndsWith("Köln", house.Address);
+            Assert.DoesNotContain("Make-Believe", house.Address);
+            Assert.Contains("not a registered Halloween host", house.Description);
+            Assert.Contains("simulated", house.Description);
             Assert.Empty(house.Validate());
         });
         Assert.Empty(state.Visited);
+    }
+
+    [Fact]
+    public void SeedUsesPublicVenuesAroundMicrosoftCologne()
+    {
+        var state = DemoSeed.Create(At(18));
+        (string Name, string Address)[] expected =
+        [
+            ("Microsoft Cologne", "Holzmarkt 2a, 50676 Köln"),
+            ("art'otel Cologne", "Holzmarkt 4, 50676 Köln"),
+            ("Schokoladenmuseum", "Am Schokoladenmuseum 1a, 50678 Köln"),
+            ("Deutsches Sport & Olympia Museum", "Im Zollhafen 1, 50678 Köln"),
+            ("Trinitatiskirche", "Filzengraben 4, 50676 Köln"),
+            ("NH Köln Altstadt", "Holzmarkt 47, 50676 Köln"),
+            ("Motel One Köln-Altstadt", "Tel-Aviv-Straße 6, 50676 Köln"),
+            ("Wasserturm Hotel Cologne", "Kaygasse 2, 50676 Köln"),
+            ("Museum Schnütgen", "Cäcilienstraße 29-33, 50667 Köln"),
+            ("Rautenstrauch-Joest-Museum", "Cäcilienstraße 29-33, 50667 Köln")
+        ];
+        Assert.Equal(expected, state.Houses.Select(house => (house.Nickname, house.Address)));
+        Assert.Equal(10, state.Houses.Select(house => house.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task ExistingFictionalAddressesAndVisitsAreNotReplacedByNewSeed()
+    {
+        var original = Sample();
+        var store = new MemoryStore();
+        await store.SaveAsync(new([original], [original.Id]));
+        var restored = await new MockNeighborhoodBackend(store, new FixedClock(At(18))).GetSnapshotAsync();
+        Assert.Equal(original, Assert.Single(restored.Houses));
+        Assert.Contains(original.Id, restored.Visited);
     }
 
     [Fact]

@@ -1,6 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="9"/>
-    <path d="m7.5 12 3 3 6-6"/>
+  <!-- Striped wrapped candy: single color so the tab bar can tint it -->
+  <defs>
+    <mask id="stripes">
+      <rect width="24" height="24" fill="#fff"/>
+      <path fill="#000" d="M8.25 7H9.45L12.95 17H11.75Z M11.05 7H12.25L15.75 17H14.55Z"/>
+    </mask>
+  </defs>
+  <g fill="#FFF4DF" transform="rotate(-35 12 12)">
+    <ellipse cx="12" cy="12" rx="5" ry="4" mask="url(#stripes)"/>
+    <path d="M7.6 12L2.7 7.4C2.2 7.1 1.7 7.5 1.85 8L2.5 10.1L1.85 12L2.5 13.9L1.85 16C1.7 16.5 2.2 16.9 2.7 16.6Z"/>
+    <path d="M16.4 12L21.3 7.4C21.8 7.1 22.3 7.5 22.15 8L21.5 10.1L22.15 12L21.5 13.9L22.15 16C22.3 16.5 21.8 16.9 21.3 16.6Z"/>
   </g>
 </svg>

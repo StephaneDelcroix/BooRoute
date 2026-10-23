@@ -18,6 +18,9 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+#if IOS || MACCATALYST || ANDROID
+            .UseMauiMaps()
+#endif
 #if !IOS && !MACCATALYST && !ANDROID && !WINDOWS
             .UseAvaloniaApp(useSingleViewLifetime: OperatingSystem.IsBrowser())
             .UseAvaloniaEssentials()

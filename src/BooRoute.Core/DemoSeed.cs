@@ -4,30 +4,26 @@ public static class DemoSeed
 {
     public static DemoState Create(DateTimeOffset localNow)
     {
-        string[] names =
+        (string Name, string Address)[] locations =
         [
-            "The Pumpkin Porch", "Moonlight Cottage", "The Friendly Ghost",
-            "Cobweb Corner", "Little Monsters Lodge", "The Witch's Kitchen",
-            "Lantern Lane Lookout", "The Bat Attic", "Sugar Skull House", "The Last Pumpkin"
-        ];
-        string[] descriptions =
-        [
-            "Follow the smiling pumpkins to our porch. Paper treat bags and a friendly welcome await.",
-            "A quiet stop with glowing lanterns, no flashing lights, and plenty of cheerful pumpkins.",
-            "Our ghosts are made of bedsheets, and all their scares are optional. Little visitors welcome!",
-            "A cobweb-covered doorway and a creaking gate. Brave visitors can meet our cardboard spider.",
-            "A gentle monster party for the smallest trick-or-treaters. Costumes encouraged, never required.",
-            "The cauldron is bubbling with pretend potions. Ask our resident witch for a Halloween riddle.",
-            "A lantern-lit path leads to the door. A relaxed visit with decorations but no sudden surprises.",
-            "Bats, shadows, and a spooky soundtrack. This stop is best for families who enjoy a fright.",
-            "Bright paper decorations and friendly skeletons. Stop by for a festive neighborhood hello.",
-            "The pumpkin patch has gone to sleep for the evening. Enjoy the decorations from the path."
+            ("Microsoft Cologne", "Holzmarkt 2a, 50676 Köln"),
+            ("art'otel Cologne", "Holzmarkt 4, 50676 Köln"),
+            ("Schokoladenmuseum", "Am Schokoladenmuseum 1a, 50678 Köln"),
+            ("Deutsches Sport & Olympia Museum", "Im Zollhafen 1, 50678 Köln"),
+            ("Trinitatiskirche", "Filzengraben 4, 50676 Köln"),
+            ("NH Köln Altstadt", "Holzmarkt 47, 50676 Köln"),
+            ("Motel One Köln-Altstadt", "Tel-Aviv-Straße 6, 50676 Köln"),
+            ("Wasserturm Hotel Cologne", "Kaygasse 2, 50676 Köln"),
+            ("Museum Schnütgen", "Cäcilienstraße 29-33, 50667 Köln"),
+            ("Rautenstrauch-Joest-Museum", "Cäcilienstraße 29-33, 50667 Köln")
         ];
         var opens = TimeOnly.FromDateTime(localNow.AddHours(-2).DateTime);
         var closes = TimeOnly.FromDateTime(localNow.AddHours(4).DateTime);
-        var houses = Enumerable.Range(0, names.Length).Select(index => new House(
-            Guid.NewGuid(), names[index], $"{index + 1} Make-Believe Lane",
-            descriptions[index], opens, closes, (ScareLevel)(index % 3),
+        var houses = locations.Select((location, index) => new House(
+            Guid.NewGuid(), location.Name, location.Address,
+            $"Demo stop at {location.Name}. This is a real public venue, not a registered Halloween host. " +
+            "Treats, welcoming hours, scare levels, quiet visits and accessibility are simulated. Do not visit for treats.",
+            opens, closes, (ScareLevel)(index % 3),
             index is 3 or 7 ? HouseStatus.OutOfTreats : index == 9 ? HouseStatus.Closed : HouseStatus.LightsOn,
             index is 0 or 1 or 2 or 4 or 6, index % 3 != 1)).ToList();
         return new(houses, []);

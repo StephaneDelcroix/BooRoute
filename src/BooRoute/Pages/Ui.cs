@@ -67,7 +67,7 @@ public static class Ui
         return new VerticalStackLayout { Spacing = 4, Children = { errors, spinner } };
     }
 
-    public static View DemoBanner(string text = "DEMO · Fictional houses · In-app mock backend") =>
+    public static View DemoBanner(string text = "DEMO · Public Cologne venues, not participating hosts · All Halloween details simulated") =>
         Card(Text(text, 12, Mint), new Thickness(12, 10));
 
     public static View Toggle(string label, string property, string id)
