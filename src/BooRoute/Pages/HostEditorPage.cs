@@ -10,6 +10,7 @@ public sealed class HostEditorPage : ContentPage
         Title = "Demo house";
         BackgroundColor = Ui.Midnight;
         HideSoftInputOnTapped = true;
+        SafeAreaEdges = SafeAreaEdges.Container;
         var fields = new VerticalStackLayout
         {
             Padding = 24,
@@ -51,6 +52,7 @@ public sealed class HostEditorPage : ContentPage
             PlaceholderColor = Ui.Muted,
             BackgroundColor = Ui.Panel,
             MinimumHeightRequest = 50,
+            FontFamily = Ui.FontFamily,
             FontSize = 16,
             ReturnType = ReturnType.Next
         };
@@ -71,6 +73,7 @@ public sealed class HostEditorPage : ContentPage
             TextColor = Ui.Cream,
             PlaceholderColor = Ui.Muted,
             BackgroundColor = Ui.Panel,
+            FontFamily = Ui.FontFamily,
             FontSize = 16
         };
         editor.SetBinding(Editor.TextProperty, nameof(HostEditorViewModel.Description));
@@ -80,10 +83,10 @@ public sealed class HostEditorPage : ContentPage
 
     private static View TimeFields()
     {
-        var opens = new TimePicker { AutomationId = "OpeningTimePicker", TextColor = Ui.Cream, Format = "HH:mm" };
+        var opens = new TimePicker { AutomationId = "OpeningTimePicker", TextColor = Ui.Cream, FontFamily = Ui.FontFamily, Format = "HH:mm" };
         opens.SetBinding(TimePicker.TimeProperty, nameof(HostEditorViewModel.OpensAt));
         SemanticProperties.SetDescription(opens, "Opening time");
-        var closes = new TimePicker { AutomationId = "ClosingTimePicker", TextColor = Ui.Cream, Format = "HH:mm" };
+        var closes = new TimePicker { AutomationId = "ClosingTimePicker", TextColor = Ui.Cream, FontFamily = Ui.FontFamily, Format = "HH:mm" };
         closes.SetBinding(TimePicker.TimeProperty, nameof(HostEditorViewModel.ClosesAt));
         SemanticProperties.SetDescription(closes, "Closing time");
         var grid = new Grid { ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star)], ColumnSpacing = 18 };

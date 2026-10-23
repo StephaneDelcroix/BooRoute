@@ -12,10 +12,13 @@ public static class Ui
     public static Color Muted => Color.FromArgb("#C3B5D6");
     public static Color Mint => Color.FromArgb("#B9E88C");
 
+    public const string FontFamily = "OpenSansRegular";
+
     public static Label Text(string value = "", double size = 16, Color? color = null, bool bold = false) =>
         new()
         {
             Text = value,
+            FontFamily = Ui.FontFamily,
             FontSize = size,
             TextColor = color ?? Cream,
             FontAttributes = bold ? FontAttributes.Bold : FontAttributes.None,
@@ -72,6 +75,7 @@ public static class Ui
             Text = title,
             AutomationId = id,
             Command = command,
+            FontFamily = Ui.FontFamily,
             FontSize = 16,
             FontAttributes = FontAttributes.Bold,
             CornerRadius = 14,
@@ -117,6 +121,7 @@ public static class Ui
             TitleColor = Muted,
             BackgroundColor = Panel,
             MinimumHeightRequest = 48,
+            FontFamily = Ui.FontFamily,
             FontSize = 16
         };
         picker.SetBinding(Microsoft.Maui.Controls.Picker.ItemsSourceProperty, items);

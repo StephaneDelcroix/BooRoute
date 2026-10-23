@@ -1,9 +1,15 @@
-using System.Text.Json;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BooRoute.Core;
 
 public sealed record DemoState(List<House> Houses, HashSet<Guid> Visited);
 public sealed record NeighborhoodSnapshot(IReadOnlyList<House> Houses, IReadOnlySet<Guid> Visited);
+
+// Source-generated so saving works where reflection-based serialization is disabled (WebAssembly, trimming).
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(DemoState))]
+internal sealed partial class DemoStateJsonContext : JsonSerializerContext;
 
 public interface IDemoStateStore
 {
@@ -43,14 +49,18 @@ public sealed class JsonDemoStateStore : IDemoStateStore
 
         await using (stream)
         {
-            var state = await JsonSerializer.DeserializeAsync(stream, DemoJsonContext.Default.DemoState, cancellationToken);
-            if (state is null || state.Houses is null || state.Visited is null ||
-                state.Houses.Any(house => house is null || house.Validate().Count != 0) ||
-                state.Houses.Select(house => house.Id).Distinct().Count() != state.Houses.Count ||
-                state.Visited.Any(id => !state.Houses.Any(house => house.Id == id)))
-                throw new InvalidDataException("The saved demo data is invalid. It has not been overwritten.");
-            return state;
+            return EnsureValid(await JsonSerializer.DeserializeAsync(stream, DemoStateJsonContext.Default.DemoState, cancellationToken));
         }
+    }
+
+    internal static DemoState EnsureValid(DemoState? state)
+    {
+        if (state is null || state.Houses is null || state.Visited is null ||
+            state.Houses.Any(house => house is null || house.Validate().Count != 0) ||
+            state.Houses.Select(house => house.Id).Distinct().Count() != state.Houses.Count ||
+            state.Visited.Any(id => !state.Houses.Any(house => house.Id == id)))
+            throw new InvalidDataException("The saved demo data is invalid. It has not been overwritten.");
+        return state;
     }
 
     public async Task SaveAsync(DemoState state, CancellationToken cancellationToken = default)
@@ -60,7 +70,7 @@ public sealed class JsonDemoStateStore : IDemoStateStore
         {
             await using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                await JsonSerializer.SerializeAsync(stream, state, DemoJsonContext.Default.DemoState, cancellationToken);
+                await JsonSerializer.SerializeAsync(stream, state, DemoStateJsonContext.Default.DemoState, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
             }
             File.Move(temporaryPath, path, overwrite: true);
@@ -70,6 +80,26 @@ public sealed class JsonDemoStateStore : IDemoStateStore
             if (File.Exists(temporaryPath))
                 File.Delete(temporaryPath);
         }
+    }
+}
+
+public sealed class TextDemoStateStore(Func<string?> read, Action<string> write) : IDemoStateStore
+{
+    public Task<DemoState?> LoadAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var json = read();
+        if (json is null)
+            return Task.FromResult<DemoState?>(null);
+
+        return Task.FromResult<DemoState?>(JsonDemoStateStore.EnsureValid(JsonSerializer.Deserialize(json, DemoStateJsonContext.Default.DemoState)));
+    }
+
+    public Task SaveAsync(DemoState state, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        write(JsonSerializer.Serialize(state, DemoStateJsonContext.Default.DemoState));
+        return Task.CompletedTask;
     }
 }
 

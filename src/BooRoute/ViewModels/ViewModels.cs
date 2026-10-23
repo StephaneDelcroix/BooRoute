@@ -129,7 +129,7 @@ public sealed class NeighborhoodViewModel : ViewModelBase
         }));
         AddHouseCommand = new AsyncCommand(_ => RunAsync(() =>
             Shell.Current.Navigation.PushAsync(new HostEditorPage(new(backend, clock, logging)))));
-        backend.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(() => _ = RefreshAsync());
+        backend.Changed += (_, _) => Application.Current?.Dispatcher.Dispatch(() => _ = RefreshAsync());
     }
 
     public async Task RefreshAsync()
@@ -274,19 +274,27 @@ public sealed class HouseLocator(ILogger<HouseLocator> logger)
         (double Latitude, double Longitude)? result = null;
         try
         {
-            var location = (await Geocoding.Default.GetLocationsAsync(key))?.FirstOrDefault();
-            if (location is not null)
-                result = (location.Latitude, location.Longitude);
+            result = await GeocodeAsync(key);
         }
         catch (Exception error) when (error is FeatureNotSupportedException or FeatureNotEnabledException or
                                       PermissionException or InvalidOperationException or IOException or
-                                      HttpRequestException or TaskCanceledException)
+                                      HttpRequestException or TaskCanceledException or JsonException)
         {
             logger.LogWarning(error, "Could not geocode a house address");
             return null; // Don't cache failures; the network may be back on the next refresh.
         }
         cache[key] = result;
         return result;
+    }
+
+    private static async Task<(double Latitude, double Longitude)?> GeocodeAsync(string address)
+    {
+#if IOS || MACCATALYST || ANDROID || WINDOWS
+        var location = (await Geocoding.Default.GetLocationsAsync(address))?.FirstOrDefault();
+        return location is null ? null : (location.Latitude, location.Longitude);
+#else
+        return await NominatimGeocoder.LocateAsync(address);
+#endif
     }
 }
 
@@ -308,7 +316,7 @@ public sealed class MapViewModel : ViewModelBase
         this.clock = clock;
         this.logging = logging;
         locator = new HouseLocator(logging.CreateLogger<HouseLocator>());
-        backend.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(() => _ = RefreshAsync());
+        backend.Changed += (_, _) => Application.Current?.Dispatcher.Dispatch(() => _ = RefreshAsync());
     }
 
     public Task RefreshAsync() => RunAsync(async () =>

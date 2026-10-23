@@ -73,6 +73,31 @@ retaining a single window.
 while the installed iOS workload expects 27.0. This bypasses only the version check;
 the mismatched toolchain remains unsupported and other build errors may still occur.
 
+### Desktop and browser (Avalonia)
+
+The `net11.0` and `net11.0-browser` targets use
+[Avalonia.Controls.Maui](https://github.com/AvaloniaUI/Avalonia.Controls.Maui)
+to draw the same MAUI pages with Avalonia. The iOS, Android, Mac Catalyst and
+Windows targets stay native MAUI.
+
+For desktop (macOS, Linux or Windows):
+
+```sh
+dotnet run --project src/BooRoute/BooRoute.csproj -f net11.0
+```
+
+For the browser, install the `wasm-tools` workload, then run the browser head
+and open the `App url` that it prints:
+
+```sh
+dotnet run --project src/BooRoute.Browser/BooRoute.Browser.csproj
+```
+
+The desktop app saves `neighborhood.json` in the user's application data folder
+(for example, `~/Library/Application Support/BooRoute` on macOS). The browser
+build has no persistent file system, so it saves the same JSON in the
+browser's `localStorage`. To start over in the browser, clear the site data.
+
 ## App artwork
 
 The app icon and native launch splash share the supplied MAUI DAY artwork in
@@ -172,9 +197,7 @@ The foreground list refreshes every 30 seconds, on appearance, on resume, and
 after successful mock-backend changes.
 
 Data is saved to `neighborhood.json` in the app's private data directory using
-atomic file replacement. Both reads and writes use source-generated
-`System.Text.Json` metadata so persistence does not require reflection under NativeAOT.
-Errors are displayed rather than replacing corrupt data
+atomic file replacement. Errors are displayed rather than replacing corrupt data
 with a fresh success-shaped dataset. To start over, uninstall and reinstall the
 app (this deletes its local demo data).
 
@@ -236,7 +259,9 @@ remain unverified.
 
 ## Structure
 
-- `src/BooRoute`: native MAUI pages, MVVM view models, and dependency injection.
+- `src/BooRoute`: MAUI pages, MVVM view models, and dependency injection. The native targets
+  use platform controls; the desktop and browser targets use Avalonia.Controls.Maui.
+- `src/BooRoute.Browser`: the WebAssembly head that starts the browser build.
 - `src/BooRoute.Core`: models, welcoming/filter rules, mock backend, and JSON persistence.
 - `tests/BooRoute.Core.Tests`: clock-controlled business-rule, persistence, and
   portable entry-presentation/grid tests (linked from the app's actual source).

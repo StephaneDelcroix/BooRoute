@@ -12,13 +12,7 @@
                 <Setter Property="TextTransform" Value="None" />
             </Style>
             <Style TargetType="Shell" ApplyToDerivedTypes="True">
-                <!-- Any transparency makes Shell mark the iOS/Mac Catalyst nav bar translucent,
-                     which lets page content scroll behind it. -->
-                <Setter Property="Shell.BackgroundColor">
-                    <OnPlatform x:TypeArguments="Color" Default="#171125">
-                        <On Platform="iOS, MacCatalyst" Value="#00171125" />
-                    </OnPlatform>
-                </Setter>
+                <Setter Property="Shell.BackgroundColor" Value="#171125" />
                 <Setter Property="Shell.ForegroundColor" Value="#FFAA61" />
                 <Setter Property="Shell.TitleColor" Value="#FFF4DF" />
                 <Setter Property="Shell.TabBarBackgroundColor" Value="#271D3A" />

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+
+	<PropertyGroup>
+		<TargetFramework>net11.0-browser</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UseMaui>true</UseMaui>
+		<RootNamespace>BooRoute.Browser</RootNamespace>
+		<AvaloniaControlsMauiGenerateBootstrap>false</AvaloniaControlsMauiGenerateBootstrap>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Browser" Version="12.1.4" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<ProjectReference Include="..\BooRoute\BooRoute.csproj" />
+	</ItemGroup>
+
+	<!-- WebAssembly has no system fonts, so emoji and symbols need bundled fallbacks. -->
+	<ItemGroup>
+		<AvaloniaResource Include="Assets\Fonts\*.ttf" />
+	</ItemGroup>
+
+</Project>

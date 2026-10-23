@@ -1,6 +1,7 @@
-<Solution>
+﻿<Solution>
   <Folder Name="/src/">
     <Project Path="src/BooRoute.Core/BooRoute.Core.csproj" />
+    <Project Path="src/BooRoute.Browser/BooRoute.Browser.csproj" />
     <Project Path="src/BooRoute/BooRoute.csproj" />
   </Folder>
   <Folder Name="/tests/">
